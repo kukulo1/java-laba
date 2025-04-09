@@ -1,4 +1,4 @@
-package ru.programming.problems.problemeight;
+package ru.linapelx.zadachi.zadachaeight;
 
 public class Worker extends Student {
     private double salary;

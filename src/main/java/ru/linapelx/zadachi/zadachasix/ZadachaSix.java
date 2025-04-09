@@ -1,4 +1,4 @@
-package ru.programming.problems.problemsix;
+package ru.linapelx.zadachi.zadachasix;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,15 +8,15 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
-public class ProblemSixSolver {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
-    private static final String username = "root";
-    private static final String password = "kukulo1";
-    private static final String tableName = "problem_six_table";
-    private static boolean tableExists = false;
-
+public class ZadachaSix {
     private static Matrix matrix;
+    private static final String url = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
+    private static final String USERNAME = "root";
+    private static final String PASSWORD = "root";
+    private static final String tableName = "matrix_data_table";
+    private static boolean tableExists = false;
+    private static final Scanner scanner = new Scanner(System.in);
+
 
     public static void main(String[] args) {
         executeStatement("DROP TABLE IF EXISTS " + tableName);
@@ -33,10 +33,6 @@ public class ProblemSixSolver {
             scanner.nextLine();
             execute(choice);
         } while (choice != -1);
-    }
-
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
     }
 
     private static void printMenu() {
@@ -67,19 +63,18 @@ public class ProblemSixSolver {
                     matrix.inputMatricesFromKeyboard();
                     matrix.printMatrix(matrix.arrayA, "Первая матрица");
                     matrix.printMatrix(matrix.arrayB, "Вторая матрица");
-
                     insertMatrixIntoDatabase(matrix.arrayA, "matrix_1");
                     insertMatrixIntoDatabase(matrix.arrayB, "matrix_2");
                 } catch (InputMismatchException e) {
                     System.out.println("Ошибка ввода: необходимо вводить только числа. Операция прервана.");
-                    scanner.nextLine(); // очистка некорректного ввода
+                    scanner.nextLine();
                 }
             }
             case 4 -> {
                 if (matrix != null) {
                     int[][] result = matrix.multiplyMatrices();
                     matrix.printMatrix(result, "Результат (A x B)");
-                    insertMatrixIntoDatabase(result, "resultOfMultiplication");
+                    insertMatrixIntoDatabase(result, "result_matrix");
                 } else {
                     System.out.println("Ошибка: матрицы не были введены.");
                 }
@@ -124,7 +119,11 @@ public class ProblemSixSolver {
         }
     }
 
-    private static List<String> getTables() {
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, USERNAME, PASSWORD);
+    }
+
+    private static void printTables() {
         List<String> tables = new ArrayList<>();
         try (Statement statement = getConnection().createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
@@ -134,7 +133,13 @@ public class ProblemSixSolver {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return tables;
+        if (tables.isEmpty()) {
+            System.out.println("Таблицы не найдены.");
+        } else {
+            for (String table : tables) {
+                System.out.println(table);
+            }
+        }
     }
 
     private static void exportToCsv(String tableName, String fileName) {
@@ -142,8 +147,7 @@ public class ProblemSixSolver {
         try (Statement statement = getConnection().createStatement();
              FileWriter fileWriter = new FileWriter(filePath)) {
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
 
@@ -197,15 +201,6 @@ public class ProblemSixSolver {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void printTables() {
-        List<String> tables = getTables();
-        if (tables.isEmpty()) {
-            System.out.println("Таблицы не найдены.");
-        } else {
-            tables.forEach(System.out::println);
         }
     }
 }

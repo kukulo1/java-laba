@@ -1,4 +1,4 @@
-package ru.programming.problems.problemeight;
+package ru.linapelx.zadachi.zadachaeight;
 
 abstract class Student {
     private String name;

@@ -1,4 +1,4 @@
-package ru.programming.problems.problemsix;
+package ru.linapelx.zadachi.zadachasix;
 
 public class ArrayPI {
     public int[][] arrayA = new int[7][7];

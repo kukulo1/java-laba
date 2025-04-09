@@ -1,4 +1,4 @@
-package ru.programming.problems.problemseven;
+package ru.linapelx.zadachi.zadachaseven;
 
 import java.util.Scanner;
 
