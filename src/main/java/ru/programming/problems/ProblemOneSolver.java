@@ -1,17 +1,42 @@
 package ru.programming.problems;
 
-import ru.programming.utils.Repository;
-
+import java.io.FileWriter;
+import java.io.IOException;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
-//implements означает то, что класс реализует интерфейс
-//так то тут можно спокойно обойтись без этого, но добавил для своего удобства, да и чтобы потом при создании 3 разных версий кода было больше пространства для вариативности
-public class ProblemOneSolver implements ProblemSolver{
-    private final Scanner scanner = new Scanner(System.in);
+public class ProblemOneSolver {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
+    private static final String username = "root";
+    private static final String password = "kukulo1";
+    private static final String tableName = "problem_one_table";
 
-    //@override - аннотация, которая означает, что метод класса переопределяет метод интерфейса
-    @Override
-    public void printMenu() {
+    private static boolean tableExists = false;
+
+    public static void main(String[] args) {
+        executeStatement("DROP TABLE IF EXISTS " + tableName);
+        tableExists = false;
+
+        int choice;
+        do {
+            printMenu();
+            while (!scanner.hasNextInt()) {
+                System.out.print("Введите корректный номер действия: ");
+                scanner.next();
+            }
+            choice = scanner.nextInt();
+            execute(choice);
+        } while (choice != -1);
+    }
+
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
+    }
+
+    private static void printMenu() {
         System.out.println("1. Вывести все таблицы из MySQL");
         System.out.println("2. Создать таблицу в MySQL");
         System.out.println("3. Сложение чисел, результат сохранить в MySQL с последующим выводом в консоль");
@@ -22,135 +47,210 @@ public class ProblemOneSolver implements ProblemSolver{
         System.out.println("8. Возведение числа в модуль, результат сохранить в MySQL с последующим выводом в консоль");
         System.out.println("9. Возведение числа в степень, результат сохранить в MySQL с последующим выводом в консоль");
         System.out.println("10. Сохранить все данные (вышеполученные результаты) из MySQL в Excel и вывести на экран");
+        System.out.println("Для выхода введите -1");
         System.out.print("Выберите действие: ");
     }
 
-    @Override
-    public void execute(int choice) {
-        //просто название таблицы, используется для создания таблицы и для запросов к ней
-        String tableName = "problem_one_table";
-        switch (choice) {
-            case 1 -> {
-                //this означает ссылку на объект, в котором вызывается этот блок кода
-                //в данном случае вызывается метод printTables() в интерфейсе ProblemSolver
-                //такое возможно из-за двух вещей: наш класс реализует интерфейс, и в этом интерфейсе есть метод printTables() со стандартной реализацией
-                //стандартная реализация интерфейса подразумевает, что если вы не переопределяете метод интерфейса, который имеет стандартную реализацию
-                //то используется как раз эта реализация
-                this.printTables();
-            }
+    private static double readDouble(String prompt) {
+        System.out.print(prompt);
+        while (!scanner.hasNextDouble()) {
+            System.out.print("Ошибка ввода. Повторите: ");
+            scanner.next();
+        }
+        return scanner.nextDouble();
+    }
 
+    private static void execute(int choice) {
+        if (choice >= 3 && choice <= 10 && !tableExists) {
+            System.out.println("Ошибка: сначала создайте таблицу (пункт 2 в меню).");
+            return;
+        }
+
+        switch (choice) {
+            case 1 -> printTables();
             case 2 -> {
                 createTable(tableName);
+                tableExists = true;
             }
             case 3 -> {
-                System.out.print("Введите первое число: ");
-                double firstNum = scanner.nextDouble();
-                System.out.print("Введите второе число: ");
-                double secondNum = scanner.nextDouble();
-                double result = firstNum + secondNum;
+                double a = readDouble("Введите первое число: ");
+                double b = readDouble("Введите второе число: ");
+                double result = a + b;
                 System.out.println("Результат: " + result);
-
-                String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                Repository.executeStatement(query, result);
+                executeStatement(insertQuery(), "Addition", a, b, result);
             }
-
             case 4 -> {
-                System.out.print("Введите первое число: ");
-                double firstNum = scanner.nextDouble();
-                System.out.print("Введите второе число: ");
-                double secondNum = scanner.nextDouble();
-                double result = firstNum - secondNum;
+                double a = readDouble("Введите первое число: ");
+                double b = readDouble("Введите второе число: ");
+                double result = a - b;
                 System.out.println("Результат: " + result);
-
-                String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                Repository.executeStatement(query, result);
+                executeStatement(insertQuery(), "Subtraction", a, b, result);
             }
-
             case 5 -> {
-                System.out.print("Введите первое число: ");
-                double firstNum = scanner.nextDouble();
-                System.out.print("Введите второе число: ");
-                double secondNum = scanner.nextDouble();
-                double result = firstNum * secondNum;
+                double a = readDouble("Введите первое число: ");
+                double b = readDouble("Введите второе число: ");
+                double result = a * b;
                 System.out.println("Результат: " + result);
-
-                // Вставляем только результат
-                String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                Repository.executeStatement(query, result);
+                executeStatement(insertQuery(), "Multiplication", a, b, result);
             }
-
             case 6 -> {
-                System.out.print("Введите первое число: ");
-                double firstNum = scanner.nextDouble();
-                System.out.print("Введите второе число: ");
-                double secondNum = scanner.nextDouble();
-
-                if (secondNum != 0) {
-                    double result = firstNum / secondNum;
-                    System.out.println("Результат: " + result);
-
-                    String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                    Repository.executeStatement(query, result);
-                } else {
+                double a = readDouble("Введите первое число: ");
+                double b = readDouble("Введите второе число: ");
+                if (b == 0) {
                     System.out.println("Ошибка: деление на ноль.");
-                }
-            }
-
-            case 7 -> {
-                System.out.print("Введите первое число: ");
-                double firstNum = scanner.nextDouble();
-                System.out.print("Введите второе число: ");
-                double secondNum = scanner.nextDouble();
-
-                if (secondNum != 0) {
-                    double result = firstNum % secondNum;
-                    System.out.println("Результат: " + result);
-
-                    String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                    Repository.executeStatement(query, result);
                 } else {
-                    System.out.println("Ошибка: деление по модулю на ноль.");
+                    double result = a / b;
+                    System.out.println("Результат: " + result);
+                    executeStatement(insertQuery(), "Division", a, b, result);
                 }
             }
-
+            case 7 -> {
+                double a = readDouble("Введите первое число: ");
+                double b = readDouble("Введите второе число: ");
+                if (b == 0) {
+                    System.out.println("Ошибка: деление по модулю на ноль.");
+                } else {
+                    double result = a % b;
+                    System.out.println("Результат: " + result);
+                    executeStatement(insertQuery(), "Modulus", a, b, result);
+                }
+            }
             case 8 -> {
-                System.out.print("Введите число: ");
-                double num = scanner.nextDouble();
+                double num = readDouble("Введите число: ");
                 double result = Math.abs(num);
                 System.out.println("Результат: " + result);
-
-                String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                Repository.executeStatement(query, result);
+                executeStatement(insertQuery(), "Absolute", num, null, result);
             }
-
             case 9 -> {
-                System.out.print("Введите число: ");
-                double num = scanner.nextDouble();
-                System.out.print("Введите степень: ");
-                double power = scanner.nextDouble();
-                double result = Math.pow(num, power);
+                double base = readDouble("Введите число: ");
+                double power = readDouble("Введите степень: ");
+                double result = Math.pow(base, power);
                 System.out.println("Результат: " + result);
-
-                String query = "INSERT INTO " + tableName + " (result) VALUES (?)";
-                Repository.executeStatement(query, result);
+                executeStatement(insertQuery(), "Power", base, power, result);
             }
-
-
             case 10 -> {
-                Repository.exportToCsv(tableName, tableName);
+                exportToCsv(tableName, tableName);
                 System.out.println("Данные были сохранены в Excel.");
-                Repository.selectAllFromTable(tableName, "id", "result");
+                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
             }
+            case -1 -> System.out.println("Выход из программы.");
+            default -> System.out.println("Неверный выбор. Попробуйте снова.");
         }
     }
 
-    @Override
-    public void createTable(String tableName) {
-            Repository.executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                    "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                    "result DOUBLE)"
-            );
-            System.out.println("Таблица " + tableName + " успешно создана!");
+    private static String insertQuery() {
+        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+    }
+
+    private static void createTable(String tableName) {
+        executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "operation VARCHAR(255), " +
+                "operand1 DOUBLE, " +
+                "operand2 DOUBLE, " +
+                "result DOUBLE)");
+        System.out.println("Таблица " + tableName + " успешно создана!");
+    }
+
+    private static void executeStatement(String query, Object... params) {
+        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+            for (int i = 0; i < params.length; i++) {
+                statement.setObject(i + 1, params[i]);
+            }
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static List<String> getTables() {
+        List<String> tables = new ArrayList<>();
+        try (Statement statement = getConnection().createStatement()) {
+            ResultSet resultSet = statement.executeQuery("SHOW TABLES");
+            while (resultSet.next()) {
+                tables.add(resultSet.getString(1));
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return tables;
+    }
+
+    private static void exportToCsv(String tableName, String fileName) {
+        String filePath = "src/main/resources/" + fileName + ".csv";
+        try (Statement statement = getConnection().createStatement();
+             FileWriter fileWriter = new FileWriter(filePath)) {
+
+            String query = "SELECT * FROM " + tableName;
+            ResultSet resultSet = statement.executeQuery(query);
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++) {
+                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
+                if (i < columnCount) fileWriter.append(";");
+            }
+            fileWriter.append("\n");
+
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    String value = resultSet.getString(i);
+                    fileWriter.append('"');
+                    if (value != null) {
+                        fileWriter.append(value.replace("\"", "\"\""));
+                    }
+                    fileWriter.append('"');
+                    if (i < columnCount) fileWriter.append(";");
+                }
+                fileWriter.append("\n");
+            }
+
+            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
+
+        } catch (SQLException | IOException e) {
+            e.printStackTrace();
+            System.out.println("Ошибка при экспорте данных в CSV.");
+        }
+    }
+
+    private static void selectAllFromTable(String tableName, String... columnNames) {
+        String query;
+        if (columnNames != null && columnNames.length > 0) {
+            String columns = String.join(", ", columnNames);
+            query = "SELECT " + columns + " FROM " + tableName;
+        } else {
+            query = "SELECT * FROM " + tableName;
+        }
+
+        try (Statement statement = getConnection().createStatement();
+             ResultSet resultSet = statement.executeQuery(query)) {
+
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            for (int i = 1; i <= columnCount; i++) {
+                System.out.print(metaData.getColumnName(i) + "\t");
+            }
+            System.out.println();
+
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    System.out.print(resultSet.getString(i) + "\t");
+                }
+                System.out.println();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void printTables() {
+        List<String> tables = getTables();
+        if (tables.isEmpty()) {
+            System.out.println("Таблицы не найдены.");
+        } else {
+            tables.forEach(System.out::println);
+        }
     }
 }
-
