@@ -1,5 +1,3 @@
-// Обновлённый код для Задачи №3 (Целочисленный тип данных)
-
 package ru.programming.problems;
 
 import java.io.FileWriter;

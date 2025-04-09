@@ -1,5 +1,3 @@
-// Обновлённый и доработанный код задачи №8 с учётом требований и валидации
-
 package ru.programming.problems.problemeight;
 
 import java.io.FileWriter;
@@ -13,7 +11,7 @@ public class ProblemEightSolver {
     private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
     private static final String username = "root";
     private static final String password = "kukulo1";
-    private static final String tableName = "students";
+    private static final String tableName = "problem_eight_table";
     private static final List<Worker> workers = new ArrayList<>();
     private static boolean tableExists = false;
 

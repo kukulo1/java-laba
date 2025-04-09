@@ -1,5 +1,3 @@
-// Обновлённый и доработанный код задачи №6 с учётом требований
-
 package ru.programming.problems.problemsix;
 
 import java.io.FileWriter;

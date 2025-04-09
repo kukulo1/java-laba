@@ -1,5 +1,3 @@
-// Обновлённый код задачи №5 (строковый тип данных, StringBuffer)
-
 package ru.programming.problems;
 
 import java.io.FileWriter;

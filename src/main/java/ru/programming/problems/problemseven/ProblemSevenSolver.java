@@ -1,5 +1,3 @@
-// Обновлённый и доработанный код задачи №7 с учётом требований
-
 package ru.programming.problems.problemseven;
 
 import java.io.FileWriter;

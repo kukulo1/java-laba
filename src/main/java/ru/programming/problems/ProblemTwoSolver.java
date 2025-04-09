@@ -1,5 +1,3 @@
-// Обновлённый код для Задания №2 (строковый тип данных)
-
 package ru.programming.problems;
 
 import java.io.FileWriter;
