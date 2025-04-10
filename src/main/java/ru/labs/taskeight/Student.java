@@ -1,4 +1,4 @@
-package ru.programming.problems.problemeight;
+package ru.labs.taskeight;
 
 abstract class Student {
     private String name;

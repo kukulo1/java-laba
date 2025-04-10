@@ -1,4 +1,4 @@
-package ru.programming.problems.problemsix;
+package ru.labs.tasksix;
 
 import java.util.Scanner;
 

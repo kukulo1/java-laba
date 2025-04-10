@@ -1,26 +1,27 @@
-package ru.programming.problems.problemeight;
+package ru.labs.taskeight;
 
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.sql.*;
 import java.util.*;
 
 public class ProblemEightSolver {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
-    private static final String username = "root";
-    private static final String password = "kukulo1";
-    private static final String tableName = "problem_eight_table";
+    private static String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
+    private static String USERNAME = "root";
+    private static String PASSWORD = "root";
+    private static Scanner scanner = new Scanner(System.in);
+    private static final String TABLE_NAME = "table_eight";
     private static final List<Worker> workers = new ArrayList<>();
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (name, age, salary) VALUES (?, ?, ?)";
     private static boolean tableExists = false;
 
     public static void main(String[] args) {
-        executeStatement("DROP TABLE IF EXISTS " + tableName);
+        executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
+        tableExists = false;
 
         int choice;
         do {
-            printMenu();
+            showConsoleMenu();
             while (!scanner.hasNextInt()) {
                 System.out.print("Введите корректный номер действия: ");
                 scanner.next();
@@ -31,7 +32,7 @@ public class ProblemEightSolver {
         } while (choice != -1);
     }
 
-    private static void printMenu() {
+    private static void showConsoleMenu() {
         System.out.println("1. Вывести все таблицы из базы данных MySQL.");
         System.out.println("2. Создать таблицу в базе данных MySQL.");
         System.out.println("3. Ввод значений ВСЕХ полей, сохранить их в MySQL с выводом в консоль.");
@@ -82,22 +83,21 @@ public class ProblemEightSolver {
                 scanner.nextLine();
 
                 workers.add(worker);
-                executeStatement("INSERT INTO " + tableName + " (name, age, salary) VALUES (?, ?, ?)",
-                        worker.getName(), worker.getAge(), worker.getSalary());
+                executeUpdate(INSERT_QUERY, worker.getName(), worker.getAge(), worker.getSalary());
 
                 System.out.printf("Добавлен: %s, %d лет, зарплата %.2f\n",
                         worker.getName(), worker.getAge(), worker.getSalary());
             }
-            case 4 -> selectAllFromTable(tableName);
+            case 4 -> selectAllFromTable(TABLE_NAME);
             case 5 -> {
-                exportToCsv(tableName, tableName);
-                selectAllFromTable(tableName);
+                exportToCsv(TABLE_NAME, TABLE_NAME);
+                selectAllFromTable(TABLE_NAME);
             }
         }
     }
 
     private static void createTable() {
-        executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "name VARCHAR(255), " +
                 "age INT, " +
@@ -105,8 +105,8 @@ public class ProblemEightSolver {
         System.out.println("Таблица создана успешно.");
     }
 
-    private static void executeStatement(String query, Object... params) {
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+    private static void executeUpdate(String query, Object... params) {
+        try (PreparedStatement statement = connect().prepareStatement(query)) {
             for (int i = 0; i < params.length; i++) {
                 statement.setObject(i + 1, params[i]);
             }
@@ -116,24 +116,38 @@ public class ProblemEightSolver {
         }
     }
 
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+    private static Connection connect() throws SQLException {
+        try {
+            return DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     private static void printTables() {
-        try (Statement statement = getConnection().createStatement()) {
+        List<String> tables = new ArrayList<>();
+        try (Statement statement = connect().createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
             while (resultSet.next()) {
-                System.out.println(resultSet.getString(1));
+                tables.add(resultSet.getString(1));
             }
         } catch (SQLException e) {
             e.printStackTrace();
+        }
+
+        if (tables.isEmpty()) {
+            System.out.println("Таблицы не найдены.");
+        } else {
+            for (String s : tables) {
+                System.out.println(s);
+            }
         }
     }
 
     private static void exportToCsv(String tableName, String fileName) {
         String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              FileWriter fileWriter = new FileWriter(filePath)) {
 
             ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
@@ -165,7 +179,7 @@ public class ProblemEightSolver {
     }
 
     private static void selectAllFromTable(String tableName) {
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName)) {
 
             ResultSetMetaData metaData = resultSet.getMetaData();

@@ -1,4 +1,4 @@
-package ru.programming.problems;
+package ru.labs;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,38 +7,56 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ProblemTwoSolver {
+public class TaskTwo {
+    private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
+    private static final String USERNAME = "root";
+    private static final String PASSWORD = "root";
+    private static Scanner scanner = new Scanner(System.in);
+    private static final String TABLE_NAME = "table_two";
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+
     private static String string1;
     private static String string2;
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
-    private static final String username = "root";
-    private static final String password = "kukulo1";
-    private static final String tableName = "problem_two_table";
     private static boolean tableExists = false;
 
     public static void main(String[] args) {
-        executeStatement("DROP TABLE IF EXISTS " + tableName);
+        executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
         tableExists = false;
 
         int choice;
         do {
-            printMenu();
+            showConsoleMenu();
             while (!scanner.hasNextInt()) {
                 System.out.print("Введите корректный номер действия: ");
                 scanner.next();
             }
             choice = scanner.nextInt();
-            scanner.nextLine(); // поглощаем перевод строки
+            scanner.nextLine();
             execute(choice);
         } while (choice != -1);
     }
 
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+    private static Connection connect() throws SQLException {
+        try {
+            Connection connection = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
+            return connection;
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+            return null;
+        }
     }
 
-    private static void printMenu() {
+    private static void createTable() {
+        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "operation VARCHAR(255), " +
+                "operand1 TEXT, " +
+                "operand2 TEXT, " +
+                "result TEXT)");
+        System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
+    }
+
+    private static void showConsoleMenu() {
         System.out.println("1. Вывести все таблицы из MySQL.");
         System.out.println("2. Создать таблицу в MySQL.");
         System.out.println("3. Ввести две строки с клавиатуры, результат сохранить в MySQL с последующим выводом в консоль.");
@@ -65,37 +83,33 @@ public class ProblemTwoSolver {
             case 3 -> {
                 string1 = readString("Введите первую строку (не менее 50 символов): ");
                 string2 = readString("Введите вторую строку (не менее 50 символов): ");
-
-                executeStatement(insertQuery(), "StringInput", string1, string2, null);
-
-                System.out.println("Строки сохранены:");
-                System.out.println("1: " + string1);
-                System.out.println("2: " + string2);
+                executeUpdate(INSERT_QUERY, "StringInput", string1, string2, null);
+                System.out.println("Строки сохранены:\n1: " + string1 + "\n2: " + string2);
             }
             case 4 -> {
                 if (!stringsEntered()) break;
                 int length1 = string1.length();
                 int length2 = string2.length();
                 String result = "Length1: " + length1 + ", Length2: " + length2;
-                executeStatement(insertQuery(), "Length", string1, string2, result);
+                executeUpdate(INSERT_QUERY, "Length", string1, string2, result);
                 System.out.println("Длины строк: " + result);
             }
             case 5 -> {
                 if (!stringsEntered()) break;
                 String concatenated = string1 + string2;
-                executeStatement(insertQuery(), "Concatenation", string1, string2, concatenated);
+                executeUpdate(INSERT_QUERY, "Concatenation", string1, string2, concatenated);
                 System.out.println("Объединение: " + concatenated);
             }
             case 6 -> {
                 if (!stringsEntered()) break;
                 String comparison = string1.equals(string2) ? "equal" : "not equal";
-                executeStatement(insertQuery(), "Comparison", string1, string2, comparison);
+                executeUpdate(INSERT_QUERY, "Comparison", string1, string2, comparison);
                 System.out.println("Сравнение: " + comparison);
             }
             case 7 -> {
-                exportToCsv(tableName, tableName);
+                getExcel(TABLE_NAME, TABLE_NAME);
                 System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
+                selectAllFromTable(TABLE_NAME, "id", "operation", "operand1", "operand2", "result");
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
@@ -122,22 +136,8 @@ public class ProblemTwoSolver {
         return input;
     }
 
-    private static String insertQuery() {
-        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
-    }
-
-    private static void createTable() {
-        executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "operation VARCHAR(255), " +
-                "operand1 TEXT, " +
-                "operand2 TEXT, " +
-                "result TEXT)");
-        System.out.println("Таблица " + tableName + " успешно создана!");
-    }
-
-    private static void executeStatement(String query, Object... params) {
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+    private static void executeUpdate(String query, Object... params) {
+        try (PreparedStatement statement = connect().prepareStatement(query)) {
             for (int i = 0; i < params.length; i++) {
                 statement.setObject(i + 1, params[i]);
             }
@@ -149,7 +149,7 @@ public class ProblemTwoSolver {
 
     private static List<String> getTables() {
         List<String> tables = new ArrayList<>();
-        try (Statement statement = getConnection().createStatement()) {
+        try (Statement statement = connect().createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
             while (resultSet.next()) {
                 tables.add(resultSet.getString(1));
@@ -160,9 +160,20 @@ public class ProblemTwoSolver {
         return tables;
     }
 
-    private static void exportToCsv(String tableName, String fileName) {
+    private static void printTables() {
+        List<String> tables = getTables();
+        if (tables.isEmpty()) {
+            System.out.println("Таблицы не найдены.");
+        } else {
+            for (String s : tables) {
+                System.out.println(s);
+            }
+        }
+    }
+
+    private static void getExcel(String tableName, String fileName) {
         String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              FileWriter fileWriter = new FileWriter(filePath)) {
 
             String query = "SELECT * FROM " + tableName;
@@ -202,7 +213,7 @@ public class ProblemTwoSolver {
                 ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
                 : "SELECT * FROM " + tableName;
 
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -222,15 +233,6 @@ public class ProblemTwoSolver {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void printTables() {
-        List<String> tables = getTables();
-        if (tables.isEmpty()) {
-            System.out.println("Таблицы не найдены.");
-        } else {
-            tables.forEach(System.out::println);
         }
     }
 }

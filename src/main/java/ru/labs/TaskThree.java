@@ -1,4 +1,4 @@
-package ru.programming.problems;
+package ru.labs;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -7,21 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
-public class ProblemThreeSolver {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
-    private static final String username = "root";
-    private static final String password = "kukulo1";
-    private static final String tableName = "problem_three_table";
+public class TaskThree {
+    private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
+    private static final String USERNAME = "root";
+    private static final String PASSWORD = "kukulo1";
+    private static Scanner scanner = new Scanner(System.in);
+    private static final String TABLE_NAME = "table_three";
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+
     private static boolean tableExists = false;
 
     public static void main(String[] args) {
-        executeStatement("DROP TABLE IF EXISTS " + tableName);
+        executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
         tableExists = false;
 
         int choice;
         do {
-            printMenu();
+            showConsoleMenu();
             while (!scanner.hasNextInt()) {
                 System.out.print("Введите корректный номер действия: ");
                 scanner.next();
@@ -32,11 +34,27 @@ public class ProblemThreeSolver {
         } while (choice != -1);
     }
 
-    private static Connection getConnection() throws SQLException {
-        return DriverManager.getConnection(url, username, password);
+    private static Connection connect() throws SQLException {
+        try {
+            Connection connection = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
+            return connection;
+        } catch (SQLException sqlException) {
+            sqlException.printStackTrace();
+            return null;
+        }
     }
 
-    private static void printMenu() {
+    private static void createTable() {
+        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "operation VARCHAR(255), " +
+                "operand1 VARCHAR(255), " +
+                "operand2 VARCHAR(255), " +
+                "result VARCHAR(255))");
+        System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
+    }
+
+    private static void showConsoleMenu() {
         System.out.println("1. Вывести все таблицы из MySQL.");
         System.out.println("2. Создать таблицу в MySQL.");
         System.out.println("3. Проверить числа на целочисленность и чётность, результат сохранить в MySQL с выводом в консоль.");
@@ -68,46 +86,32 @@ public class ProblemThreeSolver {
                         double number = Double.parseDouble(input);
                         if (number % 1 != 0) {
                             System.out.println(number + " — нецелое число");
-                            executeStatement(insertQuery(), "NotInteger", input, null, "Invalid");
+                            executeUpdate(INSERT_QUERY, "NotInteger", input, null, "Invalid");
                             continue;
                         }
                         int intVal = (int) number;
                         boolean even = intVal % 2 == 0;
                         String result = even ? "Even" : "Odd";
                         System.out.println(intVal + " — целое " + (even ? "четное" : "нечетное") + " число");
-                        executeStatement(insertQuery(), "Check", String.valueOf(intVal), null, result);
+                        executeUpdate(INSERT_QUERY, "Check", String.valueOf(intVal), null, result);
                     } catch (NumberFormatException e) {
                         System.out.println("Ошибка: '" + input + "' не является числом");
-                        executeStatement(insertQuery(), "NotNumber", input, null, "Invalid");
+                        executeUpdate(INSERT_QUERY, "NotNumber", input, null, "Invalid");
                     }
                 }
             }
             case 4 -> {
-                exportToCsv(tableName, tableName);
+                getExcel(TABLE_NAME, TABLE_NAME);
                 System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
+                selectAllFromTable(TABLE_NAME, "id", "operation", "operand1", "operand2", "result");
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
         }
     }
 
-    private static String insertQuery() {
-        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
-    }
-
-    private static void createTable() {
-        executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "operation VARCHAR(255), " +
-                "operand1 VARCHAR(255), " +
-                "operand2 VARCHAR(255), " +
-                "result VARCHAR(255))");
-        System.out.println("Таблица " + tableName + " успешно создана!");
-    }
-
-    private static void executeStatement(String query, Object... params) {
-        try (PreparedStatement statement = getConnection().prepareStatement(query)) {
+    private static void executeUpdate(String query, Object... params) {
+        try (PreparedStatement statement = connect().prepareStatement(query)) {
             for (int i = 0; i < params.length; i++) {
                 statement.setObject(i + 1, params[i]);
             }
@@ -119,7 +123,7 @@ public class ProblemThreeSolver {
 
     private static List<String> getTables() {
         List<String> tables = new ArrayList<>();
-        try (Statement statement = getConnection().createStatement()) {
+        try (Statement statement = connect().createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
             while (resultSet.next()) {
                 tables.add(resultSet.getString(1));
@@ -130,9 +134,20 @@ public class ProblemThreeSolver {
         return tables;
     }
 
-    private static void exportToCsv(String tableName, String fileName) {
+    private static void printTables() {
+        List<String> tables = getTables();
+        if (tables.isEmpty()) {
+            System.out.println("Таблицы не найдены.");
+        } else {
+            for (String s : tables) {
+                System.out.println(s);
+            }
+        }
+    }
+
+    private static void getExcel(String tableName, String fileName) {
         String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              FileWriter fileWriter = new FileWriter(filePath)) {
 
             String query = "SELECT * FROM " + tableName;
@@ -172,7 +187,7 @@ public class ProblemThreeSolver {
                 ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
                 : "SELECT * FROM " + tableName;
 
-        try (Statement statement = getConnection().createStatement();
+        try (Statement statement = connect().createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
 
             ResultSetMetaData metaData = resultSet.getMetaData();
@@ -192,15 +207,6 @@ public class ProblemThreeSolver {
 
         } catch (SQLException e) {
             e.printStackTrace();
-        }
-    }
-
-    private static void printTables() {
-        List<String> tables = getTables();
-        if (tables.isEmpty()) {
-            System.out.println("Таблицы не найдены.");
-        } else {
-            tables.forEach(System.out::println);
         }
     }
 }

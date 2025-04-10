@@ -1,4 +1,4 @@
-package ru.programming.problems.problemeight;
+package ru.labs.taskeight;
 
 public class Worker extends Student {
     private double salary;
