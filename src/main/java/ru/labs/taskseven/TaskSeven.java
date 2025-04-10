@@ -1,4 +1,4 @@
-package ru.labs.tasksix;
+package ru.labs.taskseven;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -8,16 +8,16 @@ import java.util.InputMismatchException;
 import java.util.List;
 import java.util.Scanner;
 
-public class ProblemSixSolver {
+public class TaskSeven {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "root";
+    private static final String PASSWORD = "kukulo1";
     private static Scanner scanner = new Scanner(System.in);
-    private static final String TABLE_NAME = "table_six";
-    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (matrix_name, row_index, col_index, value) VALUES (?, ?, ?, ?)";
+    private static final String TABLE_NAME = "table_seven";
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (array_name, index_pos, value) VALUES (?, ?, ?)";
 
     private static boolean tableExists = false;
-    private static Matrix matrix;
+    private static Sort sort;
 
     public static void main(String[] args) {
         executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
@@ -39,28 +39,18 @@ public class ProblemSixSolver {
     private static Connection connect() throws SQLException {
         try {
             return DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
-        } catch (SQLException sqlException) {
-            sqlException.printStackTrace();
+        } catch (SQLException e) {
+            e.printStackTrace();
             return null;
         }
-    }
-
-    private static void createTable() {
-        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "matrix_name VARCHAR(255), " +
-                "row_index INT, " +
-                "col_index INT, " +
-                "value DOUBLE)");
-        System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
     }
 
     private static void showConsoleMenu() {
         System.out.println("1. Вывести все таблицы из базы данных MySQL.");
         System.out.println("2. Создать таблицу в базе данных MySQL.");
-        System.out.println("3. Ввести две матрицы с клавиатуры и сохранить их в MySQL.");
-        System.out.println("4. Перемножить матрицы, сохранить результат в MySQL и вывести в консоль.");
-        System.out.println("5. Сохранить результаты из MySQL в Excel и вывести в консоль.");
+        System.out.println("3. Ввести массив и сохранить в MySQL с выводом в консоль.");
+        System.out.println("4. Отсортировать массив, сохранить в MySQL и вывести в консоль.");
+        System.out.println("5. Сохранить результаты из MySQL в Excel и вывести их в консоль.");
         System.out.println("Для выхода введите -1");
         System.out.print("Выберите действие: ");
     }
@@ -79,43 +69,50 @@ public class ProblemSixSolver {
             }
             case 3 -> {
                 try {
-                    matrix = new Matrix();
-                    matrix.inputMatricesFromKeyboard();
-                    matrix.printMatrix(matrix.arrayA, "Первая матрица");
-                    matrix.printMatrix(matrix.arrayB, "Вторая матрица");
-
-                    insertMatrixIntoDatabase(matrix.arrayA, "matrix_1");
-                    insertMatrixIntoDatabase(matrix.arrayB, "matrix_2");
+                    sort = new Sort();
+                    sort.inputArray();
+                    sort.printArray(sort.array, "исходный массив");
+                    for (int i = 0; i < sort.array.length; i++) {
+                        executeUpdate(INSERT_QUERY, "original", i, sort.array[i]);
+                    }
                 } catch (InputMismatchException e) {
-                    System.out.println("Ошибка ввода: необходимо вводить только числа. Операция прервана.");
+                    System.out.println("Ошибка ввода: необходимо вводить только целые числа. Операция прервана.");
                     scanner.nextLine();
                 }
             }
             case 4 -> {
-                if (matrix != null) {
-                    int[][] result = matrix.multiplyMatrices();
-                    matrix.printMatrix(result, "Результат (A x B)");
-                    insertMatrixIntoDatabase(result, "resultOfMultiplication");
+                if (sort != null) {
+                    int[] asc = sort.sortAscending();
+                    sort.printArray(asc, "Отсортированный по возрастанию");
+                    for (int i = 0; i < asc.length; i++) {
+                        executeUpdate(INSERT_QUERY, "asc", i, asc[i]);
+                    }
+                    int[] desc = sort.sortDescending();
+                    sort.printArray(desc, "Отсортированный по убыванию");
+                    for (int i = 0; i < desc.length; i++) {
+                        executeUpdate(INSERT_QUERY, "desc", i, desc[i]);
+                    }
                 } else {
-                    System.out.println("Ошибка: матрицы не были введены.");
+                    System.out.println("Ошибка: массив не был введён ранее.");
                 }
             }
             case 5 -> {
                 getExcel(TABLE_NAME, TABLE_NAME);
                 System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(TABLE_NAME, "id", "matrix_name", "row_index", "col_index", "value");
+                selectAllFromTable(TABLE_NAME);
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
         }
     }
 
-    private static void insertMatrixIntoDatabase(int[][] matrixData, String matrixName) {
-        for (int i = 0; i < 7; i++) {
-            for (int j = 0; j < 7; j++) {
-                executeUpdate(INSERT_QUERY, matrixName, i, j, matrixData[i][j]);
-            }
-        }
+    private static void createTable() {
+        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "array_name VARCHAR(255), " +
+                "index_pos INT, " +
+                "value INT)");
+        System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
     }
 
     private static void executeUpdate(String query, Object... params) {
@@ -129,7 +126,7 @@ public class ProblemSixSolver {
         }
     }
 
-    private static List<String> getTables() {
+    private static void printTables() {
         List<String> tables = new ArrayList<>();
         try (Statement statement = connect().createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
@@ -139,16 +136,11 @@ public class ProblemSixSolver {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return tables;
-    }
-
-    private static void printTables() {
-        List<String> tables = getTables();
         if (tables.isEmpty()) {
             System.out.println("Таблицы не найдены.");
         } else {
-            for (String s : tables) {
-                System.out.println(s);
+            for (String table : tables) {
+                System.out.println(table);
             }
         }
     }
@@ -158,8 +150,7 @@ public class ProblemSixSolver {
         try (Statement statement = connect().createStatement();
              FileWriter fileWriter = new FileWriter(filePath)) {
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
+            ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
 
@@ -184,17 +175,12 @@ public class ProblemSixSolver {
 
         } catch (SQLException | IOException e) {
             e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query = (columnNames != null && columnNames.length > 0)
-                ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
-
+    private static void selectAllFromTable(String tableName) {
         try (Statement statement = connect().createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+             ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName)) {
 
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();

@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.sql.*;
 import java.util.*;
 
-public class ProblemEightSolver {
+public class TaskEight {
     private static String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static String USERNAME = "root";
     private static String PASSWORD = "root";
