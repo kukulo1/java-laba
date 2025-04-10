@@ -1,4 +1,4 @@
-package ru.programming.problems.problemeight;
+package ru.labs.task8;
 
 abstract class Student {
     private String name;

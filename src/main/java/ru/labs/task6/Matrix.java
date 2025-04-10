@@ -1,4 +1,4 @@
-package ru.programming.problems.problemsix;
+package ru.labs.task6;
 
 import java.util.Scanner;
 

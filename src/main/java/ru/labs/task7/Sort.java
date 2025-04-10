@@ -1,4 +1,4 @@
-package ru.programming.problems.problemseven;
+package ru.labs.task7;
 
 import java.util.Scanner;
 

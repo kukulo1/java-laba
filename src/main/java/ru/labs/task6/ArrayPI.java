@@ -1,4 +1,4 @@
-package ru.programming.problems.problemsix;
+package ru.labs.task6;
 
 public class ArrayPI {
     public int[][] arrayA = new int[7][7];
