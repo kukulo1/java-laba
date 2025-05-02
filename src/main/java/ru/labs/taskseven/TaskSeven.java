@@ -1,47 +1,59 @@
 package ru.labs.taskseven;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.InputMismatchException;
-import java.util.List;
+import ru.labs.taskseven.*;
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Scanner;
 
 public class TaskSeven {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "kukulo1";
-    private static Scanner scanner = new Scanner(System.in);
+    private static final String PASSWORD = "root";
     private static final String TABLE_NAME = "table_seven";
-    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (array_name, index_pos, value) VALUES (?, ?, ?)";
 
+    private static final Scanner scanner = new Scanner(System.in);
     private static boolean tableExists = false;
     private static Sort sort;
 
     public static void main(String[] args) {
-        executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
-        tableExists = false;
+        try (Connection conn = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD)) {
+            conn.createStatement().execute("DROP TABLE IF EXISTS " + TABLE_NAME);
+            tableExists = false;
 
-        int choice;
-        do {
-            showConsoleMenu();
-            while (!scanner.hasNextInt()) {
-                System.out.print("Введите корректный номер действия: ");
-                scanner.next();
-            }
-            choice = scanner.nextInt();
-            scanner.nextLine();
-            execute(choice);
-        } while (choice != -1);
-    }
+            int choice;
+            do {
+                showConsoleMenu();
+                while (!scanner.hasNextInt()) {
+                    System.out.print("Введите корректный номер действия: ");
+                    scanner.next();
+                }
+                choice = scanner.nextInt();
+                scanner.nextLine();
 
-    private static Connection connect() throws SQLException {
-        try {
-            return DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
+                if (choice >= 3 && choice <= 5 && !tableExists) {
+                    System.out.println("Ошибка: сначала создайте таблицу (пункт 2 в меню).");
+                    continue;
+                }
+
+                switch (choice) {
+                    case 1 -> PrintTables.execute(conn);
+                    case 2 -> {
+                        CreateTable.execute(conn, TABLE_NAME);
+                        tableExists = true;
+                    }
+                    case 3 -> sort = InputArray.execute(conn, scanner, TABLE_NAME);
+                    case 4 -> SortArray.execute(conn, sort, TABLE_NAME);
+                    case 5 -> ExportToCsv.execute(conn, TABLE_NAME);
+                    case -1 -> System.out.println("Выход из программы.");
+                    default -> System.out.println("Неверный выбор. Повторите.");
+                }
+
+            } while (choice != -1);
+
         } catch (SQLException e) {
             e.printStackTrace();
-            return null;
         }
     }
 
@@ -53,152 +65,5 @@ public class TaskSeven {
         System.out.println("5. Сохранить результаты из MySQL в Excel и вывести их в консоль.");
         System.out.println("Для выхода введите -1");
         System.out.print("Выберите действие: ");
-    }
-
-    private static void execute(int choice) {
-        if (choice >= 3 && choice <= 5 && !tableExists) {
-            System.out.println("Ошибка: сначала создайте таблицу (пункт 2 в меню).\n");
-            return;
-        }
-
-        switch (choice) {
-            case 1 -> printTables();
-            case 2 -> {
-                createTable();
-                tableExists = true;
-            }
-            case 3 -> {
-                try {
-                    sort = new Sort();
-                    sort.inputArray();
-                    sort.printArray(sort.array, "исходный массив");
-                    for (int i = 0; i < sort.array.length; i++) {
-                        executeUpdate(INSERT_QUERY, "original", i, sort.array[i]);
-                    }
-                } catch (InputMismatchException e) {
-                    System.out.println("Ошибка ввода: необходимо вводить только целые числа. Операция прервана.");
-                    scanner.nextLine();
-                }
-            }
-            case 4 -> {
-                if (sort != null) {
-                    int[] asc = sort.sortAscending();
-                    sort.printArray(asc, "Отсортированный по возрастанию");
-                    for (int i = 0; i < asc.length; i++) {
-                        executeUpdate(INSERT_QUERY, "asc", i, asc[i]);
-                    }
-                    int[] desc = sort.sortDescending();
-                    sort.printArray(desc, "Отсортированный по убыванию");
-                    for (int i = 0; i < desc.length; i++) {
-                        executeUpdate(INSERT_QUERY, "desc", i, desc[i]);
-                    }
-                } else {
-                    System.out.println("Ошибка: массив не был введён ранее.");
-                }
-            }
-            case 5 -> {
-                getExcel(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(TABLE_NAME);
-            }
-            case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Повторите.");
-        }
-    }
-
-    private static void createTable() {
-        executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "array_name VARCHAR(255), " +
-                "index_pos INT, " +
-                "value INT)");
-        System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
-    }
-
-    private static void executeUpdate(String query, Object... params) {
-        try (PreparedStatement statement = connect().prepareStatement(query)) {
-            for (int i = 0; i < params.length; i++) {
-                statement.setObject(i + 1, params[i]);
-            }
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void printTables() {
-        List<String> tables = new ArrayList<>();
-        try (Statement statement = connect().createStatement()) {
-            ResultSet resultSet = statement.executeQuery("SHOW TABLES");
-            while (resultSet.next()) {
-                tables.add(resultSet.getString(1));
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        if (tables.isEmpty()) {
-            System.out.println("Таблицы не найдены.");
-        } else {
-            for (String table : tables) {
-                System.out.println(table);
-            }
-        }
-    }
-
-    private static void getExcel(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = connect().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
-
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
-            }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private static void selectAllFromTable(String tableName) {
-        try (Statement statement = connect().createStatement();
-             ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName)) {
-
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.print(metaData.getColumnName(i) + "\t");
-            }
-            System.out.println();
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    System.out.print(resultSet.getString(i) + "\t");
-                }
-                System.out.println();
-            }
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 }
