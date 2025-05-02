@@ -1,6 +1,7 @@
 package ru.labs.task8;
 
 import ru.labs.DbHelper;
+import ru.labs.task8.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,24 @@ public class TaskEightRunner {
             }
             choice = scanner.nextInt();
             scanner.nextLine();
-            handleAction(choice);
+
+            if (choice >= 3 && choice <= 5 && !isTableCreated) {
+                System.out.println("Ошибка, таблица не создана.");
+                continue;
+            }
+
+            switch (choice) {
+                case 1 -> ListTablesExecutioner.execute();
+                case 2 -> {
+                    CreateTableExecutioner.execute(TABLE_NAME);
+                    isTableCreated = true;
+                }
+                case 3 -> InsertWorkerExecutioner.execute(scanner, TABLE_NAME, workers);
+                case 4 -> PrintAllWorkersExecutioner.execute(TABLE_NAME);
+                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case -1 -> System.out.println("Выход из программы.");
+                default -> System.out.println("Неверный выбор. Повторите.");
+            }
         } while (choice != -1);
     }
 
@@ -37,76 +55,5 @@ public class TaskEightRunner {
         System.out.println("5. Сохранить результаты из MySQL в Excel и вывести их в консоль.");
         System.out.println("Для выхода из программы введите -1.");
         System.out.print("Выберите действие: ");
-    }
-
-    private static void handleAction(int choice) {
-        if (choice >= 3 && choice <= 5 && !isTableCreated) {
-            System.out.println("Ошибка, таблица не создана.");
-            return;
-        }
-
-        switch (choice) {
-            case 1 -> DbHelper.listTables();
-            case 2 -> {
-                DbHelper.execute("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "name VARCHAR(255), " +
-                        "age INT, " +
-                        "salary DOUBLE)");
-                isTableCreated = true;
-                System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
-            }
-            case 3 -> {
-                Worker worker = new Worker();
-                System.out.print("Введите имя студента: ");
-                worker.setName(scanner.nextLine());
-
-                worker.setAge(readInt("Введите возраст студента (0-100): ", 0, 100));
-                worker.setSalary(readDouble("Введите зарплату студента (неотрицательное число): ", 0));
-
-                workers.add(worker);
-                DbHelper.execute("INSERT INTO " + TABLE_NAME + " (name, age, salary) VALUES (?, ?, ?)",
-                        worker.getName(), worker.getAge(), worker.getSalary());
-
-                System.out.printf("Добавлен: %s, %d лет, зарплата %.2f\n",
-                        worker.getName(), worker.getAge(), worker.getSalary());
-            }
-            case 4 -> DbHelper.selectAllFromTable(TABLE_NAME, "id", "name", "age", "salary");
-            case 5 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "name", "age", "salary");
-            }
-            case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Повторите.");
-        }
-    }
-
-    private static int readInt(String prompt, int min, int max) {
-        int value;
-        do {
-            System.out.print(prompt);
-            while (!scanner.hasNextInt()) {
-                System.out.print("Ошибка. Введите целое число: ");
-                scanner.next();
-            }
-            value = scanner.nextInt();
-        } while (value < min || value > max);
-        scanner.nextLine();
-        return value;
-    }
-
-    private static double readDouble(String prompt, double min) {
-        double value;
-        do {
-            System.out.print(prompt);
-            while (!scanner.hasNextDouble()) {
-                System.out.print("Ошибка. Введите число: ");
-                scanner.next();
-            }
-            value = scanner.nextDouble();
-        } while (value < min);
-        scanner.nextLine();
-        return value;
     }
 }

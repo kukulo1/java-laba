@@ -17,7 +17,7 @@ public class TaskFiveRunner {
         isTableCreated = false;
 
         inputOne = new StringBuffer(readValidated("Введите первую строку длиной не менее 50 символов: "));
-        inputTwo = new StringBuffer(readValidated("Введите вторую строку длиной не менее 50 символов: "));
+        inputTwo = new StringBuffer(readValidated("Введите вторую строку длиной не менее 50 символовЫ: "));
 
         int choice;
         do {

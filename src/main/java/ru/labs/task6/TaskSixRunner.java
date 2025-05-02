@@ -1,20 +1,18 @@
 package ru.labs.task6;
 
 import ru.labs.DbHelper;
+import ru.labs.task6.*;
 
-import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class TaskSixRunner {
     private static final Scanner scanner = new Scanner(System.in);
     private static final String TABLE_NAME = "lab6_matrix";
     private static boolean isTableCreated = false;
-
-    private static Matrix matrix;
+    private static final Matrix matrix = new Matrix();
 
     public static void main(String[] args) {
         DbHelper.execute("DROP TABLE IF EXISTS " + TABLE_NAME);
-        isTableCreated = false;
 
         int userChoice;
         do {
@@ -25,7 +23,24 @@ public class TaskSixRunner {
             }
             userChoice = scanner.nextInt();
             scanner.nextLine();
-            handleAction(userChoice);
+
+            if (userChoice >= 3 && userChoice <= 5 && !isTableCreated) {
+                System.out.println("Ошибка, таблица не создана.");
+                continue;
+            }
+
+            switch (userChoice) {
+                case 1 -> ListTablesExecutioner.execute();
+                case 2 -> {
+                    CreateTableExecutioner.execute(TABLE_NAME);
+                    isTableCreated = true;
+                }
+                case 3 -> InputMatricesExecutioner.execute(scanner, TABLE_NAME, matrix);
+                case 4 -> MultiplyMatricesExecutioner.execute(TABLE_NAME, matrix);
+                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case -1 -> System.out.println("Выход из программы.");
+                default -> System.out.println("Неверный выбор. Повторите.");
+            }
         } while (userChoice != -1);
     }
 
@@ -37,66 +52,5 @@ public class TaskSixRunner {
         System.out.println("5. Сохранить результаты из MySQL в Excel и вывести в консоль.");
         System.out.println("Для выхода из программы введите -1.");
         System.out.print("Выберите действие: ");
-    }
-
-    private static void handleAction(int choice) {
-        if (choice >= 3 && choice <= 5 && !isTableCreated) {
-            System.out.println("Ошибка, таблица не создана.");
-            return;
-        }
-
-        switch (choice) {
-            case 1 -> DbHelper.listTables();
-            case 2 -> {
-                DbHelper.execute("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "matrix_name VARCHAR(255), " +
-                        "row_index INT, " +
-                        "col_index INT, " +
-                        "value DOUBLE)");
-                isTableCreated = true;
-                System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
-            }
-            case 3 -> {
-                try {
-                    matrix = new Matrix();
-                    matrix.inputMatricesFromKeyboard();
-
-                    matrix.printMatrix(matrix.arrayA, "Первая матрица:");
-                    matrix.printMatrix(matrix.arrayB, "Вторая матрица:");
-
-                    insertMatrix(matrix.arrayA, "matrix_A");
-                    insertMatrix(matrix.arrayB, "matrix_B");
-                } catch (InputMismatchException e) {
-                    System.out.println("Ошибка ввода: необходимо вводить только числа. Повторите снова.");
-                    scanner.nextLine();
-                }
-            }
-            case 4 -> {
-                if (matrix == null) {
-                    System.out.println("Ошибка: матрицы не были введены.");
-                    return;
-                }
-                int[][] result = matrix.multiplyMatrices();
-                matrix.printMatrix(result, "Результат (A x B)");
-                insertMatrix(result, "matrix_C");
-            }
-            case 5 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "matrix_name", "row_index", "col_index", "value");
-            }
-            case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Повторите.");
-        }
-    }
-
-    private static void insertMatrix(int[][] matrixData, String name) {
-        String sql = "INSERT INTO " + TABLE_NAME + " (matrix_name, row_index, col_index, value) VALUES (?, ?, ?, ?)";
-        for (int i = 0; i < matrixData.length; i++) {
-            for (int j = 0; j < matrixData[i].length; j++) {
-                DbHelper.execute(sql, name, i, j, matrixData[i][j]);
-            }
-        }
     }
 }

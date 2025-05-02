@@ -1,8 +1,8 @@
 package ru.labs.task7;
 
 import ru.labs.DbHelper;
+import ru.labs.task7.*;
 
-import java.util.InputMismatchException;
 import java.util.Scanner;
 
 public class TaskSevenRunner {
@@ -25,7 +25,33 @@ public class TaskSevenRunner {
             }
             userChoice = scanner.nextInt();
             scanner.nextLine();
-            handleAction(userChoice);
+
+            if (userChoice >= 3 && userChoice <= 5 && !isTableCreated) {
+                System.out.println("Ошибка, таблица не создана.");
+                continue;
+            }
+
+            switch (userChoice) {
+                case 1 -> ListTablesExecutioner.execute();
+                case 2 -> {
+                    CreateTableExecutioner.execute(TABLE_NAME);
+                    isTableCreated = true;
+                }
+                case 3 -> {
+                    sort = new Sort();
+                    InputArrayExecutioner.execute(scanner, TABLE_NAME, sort);
+                }
+                case 4 -> {
+                    if (sort == null) {
+                        System.out.println("Ошибка: массив не был введён ранее.");
+                    } else {
+                        SortArrayExecutioner.execute(TABLE_NAME, sort);
+                    }
+                }
+                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case -1 -> System.out.println("Выход из программы.");
+                default -> System.out.println("Неверный выбор. Повторите.");
+            }
         } while (userChoice != -1);
     }
 
@@ -37,64 +63,5 @@ public class TaskSevenRunner {
         System.out.println("5. Сохранить результаты из MySQL в Excel и вывести их в консоль.");
         System.out.println("Для выхода из программы введите -1.");
         System.out.print("Выберите действие: ");
-    }
-
-    private static void handleAction(int choice) {
-        if (choice >= 3 && choice <= 5 && !isTableCreated) {
-            System.out.println("Ошибка, таблица не создана.");
-            return;
-        }
-
-        switch (choice) {
-            case 1 -> DbHelper.listTables();
-            case 2 -> {
-                DbHelper.execute("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
-                        "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                        "array_name VARCHAR(255), " +
-                        "index_pos INT, " +
-                        "value INT)");
-                isTableCreated = true;
-                System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
-            }
-            case 3 -> {
-                try {
-                    sort = new Sort();
-                    sort.inputArray();
-                    sort.printArray(sort.array, "Исходный массив");
-                    insertArray(sort.array, "original");
-                } catch (InputMismatchException e) {
-                    System.out.println("Ошибка ввода: необходимо вводить только целые числа.");
-                    scanner.nextLine();
-                }
-            }
-            case 4 -> {
-                if (sort == null) {
-                    System.out.println("Ошибка: массив не был введён ранее.");
-                    return;
-                }
-
-                int[] asc = sort.sortAscending();
-                sort.printArray(asc, "Сортировка по возрастанию");
-                insertArray(asc, "asc");
-
-                int[] desc = sort.sortDescending();
-                sort.printArray(desc, "Сортировка по убыванию");
-                insertArray(desc, "desc");
-            }
-            case 5 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "array_name", "index_pos", "value");
-            }
-            case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Повторите.");
-        }
-    }
-
-    private static void insertArray(int[] array, String name) {
-        String sql = "INSERT INTO " + TABLE_NAME + " (array_name, index_pos, value) VALUES (?, ?, ?)";
-        for (int i = 0; i < array.length; i++) {
-            DbHelper.execute(sql, name, i, array[i]);
-        }
     }
 }
