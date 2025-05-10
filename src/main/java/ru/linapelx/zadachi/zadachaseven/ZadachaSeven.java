@@ -1,7 +1,5 @@
 package ru.linapelx.zadachi.zadachaseven;
 
-import ru.linapelx.zadachi.zadachaseven.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -9,7 +7,7 @@ import java.util.Scanner;
 
 public class ZadachaSeven {
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "kukulo1";
+    private static final String PASSWORD = "root";
     private static final String URL = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
     private static final String TABLE_NAME = "array_sort_table";
 
@@ -45,7 +43,7 @@ public class ZadachaSeven {
                     }
                     case 3 -> sort = InputArray.execute(conn, scanner, TABLE_NAME);
                     case 4 -> SortArray.execute(conn, TABLE_NAME, sort);
-                    case 5 -> ExportToCsv.execute(conn, TABLE_NAME);
+                    case 5 -> ExportToXls.execute(conn, TABLE_NAME);
                     case -1 -> System.out.println("Выход из программы.");
                     default -> System.out.println("Неверный выбор. Повторите.");
                 }

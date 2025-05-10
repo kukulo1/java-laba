@@ -1,15 +1,14 @@
 package ru.linapelx.zadachi;
 
-import java.io.FileWriter;
 import java.sql.*;
 import java.util.Scanner;
 
 public class ZadachaOne {
     static Scanner scanner = new Scanner(System.in);
-    static final String DB_URL = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
-    static final String DB_USER = "root";
-    static final String DB_PASS = "kukulo1";
-    static final String TABLE = "math_operations_set2";
+    static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
+    static final String username = "root";
+    static final String password = "root";
+    static final String tableName = "math_operations_set2";
     static boolean created = false;
 
     public static void main(String[] args) {
@@ -18,7 +17,7 @@ public class ZadachaOne {
     }
 
     static void removeTable() {
-        runUpdate("DROP TABLE IF EXISTS " + TABLE);
+        runUpdate("DROP TABLE IF EXISTS " + tableName);
     }
 
     static void menuLoop() {
@@ -65,7 +64,10 @@ public class ZadachaOne {
         else if (option == 7) mathOperation("Modulus", '%');
         else if (option == 8) modulus();
         else if (option == 9) power();
-        else if (option == 10) exportCsv();
+        else if (option == 10) {
+            exportToXls();
+            selectAllFromTable();
+        }
         else if (option == -1) System.out.println("Выход из программы.");
         else System.out.println("Неверный выбор.");
     }
@@ -115,7 +117,7 @@ public class ZadachaOne {
     }
 
     static void createTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS " + TABLE + " (" +
+        String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY," +
                 "operation VARCHAR(255)," +
                 "operand1 DOUBLE," +
@@ -127,7 +129,7 @@ public class ZadachaOne {
     }
 
     static void showTables() {
-        try (Connection c = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        try (Connection c = DriverManager.getConnection(url, username, password);
              Statement s = c.createStatement()) {
             ResultSet rs = s.executeQuery("SHOW TABLES");
             while (rs.next()) {
@@ -138,63 +140,59 @@ public class ZadachaOne {
         }
     }
 
-    static void exportCsv() {
-        String file = "src/main/resources/" + TABLE + ".csv";
-        try (Connection c = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement s = c.createStatement();
-             ResultSet rs = s.executeQuery("SELECT * FROM " + TABLE);
-             FileWriter fw = new FileWriter(file)) {
+    private static void exportToXls() {
+        String fileName = "zadacha_one.xls";
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
-            for (int i = 1; i <= cols; i++) {
-                fw.write(meta.getColumnName(i));
-                if (i < cols) fw.write(";");
+        String filePath = "C:/Users/User/Desktop/" + fileName;
+
+        String query = "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
+
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Данные были сохранены в Excel.");
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его вручную или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            fw.write("\n");
-
-            while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    fw.write(rs.getString(i));
-                    if (i < cols) fw.write(";");
-                }
-                fw.write("\n");
-            }
-
-            System.out.println("Данные сохранены в файл: " + file);
-            printTable();
-
-        } catch (Exception e) {
-            System.out.println("Ошибка при экспорте.");
         }
     }
 
-    static void printTable() {
-        try (Connection c = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement s = c.createStatement();
-             ResultSet rs = s.executeQuery("SELECT * FROM " + TABLE)) {
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
-
-            for (int i = 1; i <= cols; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
-            }
-            System.out.println();
+            System.out.printf("%-5s | %-15s | %-30s | %-30s | %-200s%n",
+                    "ID", "Operation", "Operand1","Operand2", "Result");
 
             while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String operation = rs.getString("operation");
+                Double operand1 = rs.getDouble("operand1");
+                Double operand2 = rs.getDouble("operand2");
+                Double result = rs.getDouble("result");
+
+                System.out.printf("%-5d | %-15s | %-30.2f | %-30.2f | %-30.2f%n",
+                        id, operation, operand1, operand2,  result);
             }
+
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
+    }
+
     static void runUpdate(String sql, Object... params) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              PreparedStatement ps = conn.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 ps.setObject(i + 1, params[i]);
@@ -206,6 +204,6 @@ public class ZadachaOne {
     }
 
     static String insertStatement() {
-        return "INSERT INTO " + TABLE + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
     }
 }

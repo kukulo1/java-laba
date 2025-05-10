@@ -1,7 +1,5 @@
 package ru.linapelx.zadachi.zadachasix;
 
-import ru.linapelx.zadachi.zadachasix.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -45,7 +43,7 @@ public class ZadachaSix {
                     }
                     case 3 -> matrix = InputMatrices.execute(conn, scanner, TABLE_NAME);
                     case 4 -> MultiplyMatrices.execute(conn, TABLE_NAME, matrix);
-                    case 5 -> ExportToCsv.execute(conn, TABLE_NAME);
+                    case 5 -> ExportToXls.execute(conn, TABLE_NAME);
                     case -1 -> System.out.println("Выход из программы.");
                     default -> System.out.println("Неверный выбор. Повторите.");
                 }

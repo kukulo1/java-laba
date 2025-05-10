@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class CreateTable extends Command {
+public class CreateTable extends ZadachaEight{
     public static void execute(Connection conn, String tableName) {
         String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                      "id INT AUTO_INCREMENT PRIMARY KEY, " +

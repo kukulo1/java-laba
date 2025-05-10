@@ -1,23 +1,22 @@
 package ru.linapelx.zadachi;
 
-import java.io.*;
 import java.sql.*;
 import java.util.*;
 
 public class ZadachaTwo {
 
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
-    private static final String DB_USER = "root";
-    private static final String DB_PASS = "root";
-    private static final String TABLE = "string_task_2_set_b";
+    private static final String url = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
+    private static final String username = "root";
+    private static final String password = "root";
+    private static final String tableName = "string_task_2_set_b";
     private static final Scanner scanner = new Scanner(System.in);
     private static String lineA = null;
     private static String lineB = null;
-    private static boolean tableCreated = false;
+    private static boolean tableNameCreated = false;
 
     public static void main(String[] args) {
-        executeSQL("DROP TABLE IF EXISTS " + TABLE);
-        tableCreated = false;
+        executeSQL("DROP TABLE IF EXISTS " + tableName);
+        tableNameCreated = false;
 
         int menuChoice;
         do {
@@ -45,18 +44,18 @@ public class ZadachaTwo {
     }
 
     private static void handle(int code) {
-        if (code > 2 && code <= 7 && !tableCreated) {
+        if (code > 2 && code <= 7 && !tableNameCreated) {
             System.out.println("Сначала необходимо создать таблицу (пункт 2).");
             return;
         }
 
         switch (code) {
             case 1:
-                listTables();
+                listTableNames();
                 break;
             case 2:
-                createMainTable();
-                tableCreated = true;
+                createTable();
+                tableNameCreated = true;
                 break;
             case 3:
                 lineA = inputString("Введите первую строку (>= 50 симв.): ");
@@ -83,9 +82,8 @@ public class ZadachaTwo {
                 System.out.println("Сравнение: " + cmp);
                 break;
             case 7:
-                exportToCSV(TABLE, TABLE);
-                System.out.println("Экспорт завершён.");
-                printTableContent(TABLE);
+                exportToXls();
+                selectAllFromTable();
                 break;
             case -1:
                 System.out.println("Завершение работы.");
@@ -115,20 +113,20 @@ public class ZadachaTwo {
         return true;
     }
 
-    private static void createMainTable() {
-        String sql = "CREATE TABLE IF NOT EXISTS " + TABLE + " (" +
+    private static void createTable() {
+        String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "operation VARCHAR(100), operand1 TEXT, operand2 TEXT, result TEXT)";
         executeSQL(sql);
-        System.out.println("Таблица создана: " + TABLE);
+        System.out.println("Таблица создана: " + tableName);
     }
 
     private static String insertStatement() {
-        return "INSERT INTO " + TABLE + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
     }
 
     private static void executeSQL(String sql, Object... params) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < params.length; i++) {
                 stmt.setObject(i + 1, params[i]);
@@ -139,8 +137,8 @@ public class ZadachaTwo {
         }
     }
 
-    private static void listTables() {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    private static void listTableNames() {
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("SHOW TABLES");
             System.out.println("Существующие таблицы:");
@@ -151,56 +149,55 @@ public class ZadachaTwo {
             e.printStackTrace();
         }
     }
+    
+    private static void exportToXls() {
+        String fileName = "zadacha_two.xls";
 
-    private static void exportToCSV(String tableName, String fileAlias) {
-        String path = "src/main/resources/" + fileAlias + ".csv";
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement();
-             FileWriter fw = new FileWriter(path)) {
+        String filePath = "C:/Users/User/Desktop/" + fileName;
 
-            ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName);
-            ResultSetMetaData md = rs.getMetaData();
-            int cols = md.getColumnCount();
+        String query = "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
 
-            for (int i = 1; i <= cols; i++) {
-                fw.write('"' + md.getColumnName(i) + '"');
-                if (i < cols) fw.write(";");
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Данные были сохранены в Excel.");
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его вручную или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            fw.write("\n");
-
-            while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    String val = rs.getString(i);
-                    fw.write('"' + (val != null ? val.replace("\"", "\"\"") : "") + '"');
-                    if (i < cols) fw.write(";");
-                }
-                fw.write("\n");
-            }
-        } catch (Exception ex) {
-            ex.printStackTrace();
         }
     }
 
-    private static void printTableContent(String table) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + table)) {
-            ResultSetMetaData md = rs.getMetaData();
-            int cols = md.getColumnCount();
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-            for (int i = 1; i <= cols; i++) {
-                System.out.print(md.getColumnName(i) + "\t");
-            }
-            System.out.println();
+            System.out.printf("%-5s | %-15s | %-70s | %-70s | %-150s%n",
+                    "ID", "Operation", "Operand1", "Operand2", "Result");
 
             while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String operation = rs.getString("operation");
+                String operand1 = rs.getString("operand1");
+                String operand2 = rs.getString("operand2");
+                String result = rs.getString("result");
+
+                System.out.printf("%-5s | %-15s | %-70s | %-70s | %-150s%n",
+                        id, operation, operand1, operand2, result);
             }
-        } catch (SQLException ex) {
-            ex.printStackTrace();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
+    }
+
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
     }
 }

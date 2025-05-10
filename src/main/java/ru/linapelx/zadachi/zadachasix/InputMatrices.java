@@ -1,14 +1,12 @@
 package ru.linapelx.zadachi.zadachasix;
 
-import ru.linapelx.zadachi.zadachasix.Matrix;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-public class InputMatrices extends Command {
+public class InputMatrices extends ZadachaSix {
     public static Matrix execute(Connection conn, Scanner scanner, String tableName) {
         Matrix matrix = new Matrix();
         try {
@@ -19,17 +17,14 @@ public class InputMatrices extends Command {
             insertMatrix(conn, matrix.arrayA, tableName, "matrix_1");
             insertMatrix(conn, matrix.arrayB, tableName, "matrix_2");
 
-        } catch (InputMismatchException e) {
-            System.out.println("Ошибка ввода: только числа.");
-            scanner.nextLine();
         } catch (SQLException e) {
-            System.out.println("Ошибка при запросе к бд! Попробуйтен еще раз");
+            System.out.println("Ошибка при запросе к бд! Попробуйте еще раз");
         }
 
         return matrix;
     }
 
-    private static void insertMatrix(Connection conn, int[][] matrix, String tableName, String name) throws SQLException {
+    private static void insertMatrix(Connection conn, long[][] matrix, String tableName, String name) throws SQLException {
         String sql = "INSERT INTO " + tableName + " (matrix_name, row_index, col_index, value) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < matrix.length; i++) {

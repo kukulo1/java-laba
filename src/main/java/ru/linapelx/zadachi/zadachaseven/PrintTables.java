@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrintTables extends Command {
+public class PrintTables extends ZadachaSeven {
     public static void execute(Connection conn) {
         List<String> tables = new ArrayList<>();
         try (Statement stmt = conn.createStatement();

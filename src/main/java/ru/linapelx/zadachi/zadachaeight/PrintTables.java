@@ -2,7 +2,7 @@ package ru.linapelx.zadachi.zadachaeight;
 
 import java.sql.*;
 
-public class PrintTables extends Command {
+public class PrintTables extends ZadachaEight {
     public static void execute(Connection conn) {
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW TABLES")) {

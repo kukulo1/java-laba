@@ -2,32 +2,29 @@ package ru.linapelx.zadachi.zadachasix;
 
 import java.sql.*;
 
-public class SelectAllFromTable extends Command {
-    public static void execute(Connection conn, String tableName, String... columns) {
-        String query = (columns != null && columns.length > 0)
-                ? "SELECT " + String.join(", ", columns) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
-
+public class SelectAllFromTable extends ZadachaSix {
+    public static void execute(Connection conn, String tableName) {
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int colCount = meta.getColumnCount();
+            System.out.printf("%-3s | %-15s | %-10s | %-10s | %-20s\n",
+                    "ID", "Matrix Name", "Row Index", "Col Index", "Value");
 
-            for (int i = 1; i <= colCount; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
-            }
-            System.out.println();
 
             while (rs.next()) {
-                for (int i = 1; i <= colCount; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String matrixName = rs.getString("matrix_name");
+                int rowIndex = rs.getInt("row_index");
+                int colIndex = rs.getInt("col_index");
+                long value = rs.getLong("value");
+
+                System.out.printf("%-3d | %-15s | %-10d | %-10d | %-20d\n",
+                        id, matrixName, rowIndex, colIndex, value);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
+
     }
 }

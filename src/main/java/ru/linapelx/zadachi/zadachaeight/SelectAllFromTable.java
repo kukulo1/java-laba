@@ -2,24 +2,20 @@ package ru.linapelx.zadachi.zadachaeight;
 
 import java.sql.*;
 
-public class SelectAllFromTable extends Command {
+public class SelectAllFromTable extends ZadachaEight {
     public static void execute(Connection conn, String tableName) {
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int count = meta.getColumnCount();
-
-            for (int i = 1; i <= count; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
-            }
-            System.out.println();
+            System.out.printf("%-3s | %-40s | %-5s | %-10s\n", "ID", "Имя", "Возраст", "Зарплата");
 
             while (rs.next()) {
-                for (int i = 1; i <= count; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String name = rs.getString("name");
+                int age = rs.getInt("age");
+                double salary = rs.getDouble("salary");
+
+                System.out.printf("%-3d | %-38s | %-7d | %-10.2f\n", id, name, age, salary);
             }
 
         } catch (SQLException e) {

@@ -1,16 +1,14 @@
 package ru.linapelx.zadachi;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.Scanner;
 
 public class ZadachaThree {
     private static final Scanner scanner = new Scanner(System.in);
-    private static final String DB_URL = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
-    private static final String DB_USER = "root";
-    private static final String DB_PASS = "root";
-    private static final String TABLE_NAME = "int_check_task_3_b";
+    private static final String url = "jdbc:mysql://localhost:3306/java_labs?createDatabaseIfNotExist=true";
+    private static final String username = "root";
+    private static final String password = "root";
+    private static final String tableName = "int_check_task_3_b";
     private static boolean tableWasCreated = false;
 
     public static void main(String[] args) {
@@ -39,9 +37,9 @@ public class ZadachaThree {
     }
 
     private static void clearTableIfExists() {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate("DROP TABLE IF EXISTS " + TABLE_NAME);
+            stmt.executeUpdate("DROP TABLE IF EXISTS " + tableName);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -65,8 +63,8 @@ public class ZadachaThree {
                 checkNumbers();
                 break;
             case 4:
-                exportTableToCSV();
-                displayTable();
+                exportToXls();
+                selectAllFromTable();
                 break;
             case -1:
                 System.out.println("Выход из программы.");
@@ -77,7 +75,7 @@ public class ZadachaThree {
     }
 
     private static void listTables() {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW TABLES")) {
             boolean found = false;
@@ -92,14 +90,13 @@ public class ZadachaThree {
     }
 
     private static void createTable() {
-        String query = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " ("
+        String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
                 + "id INT AUTO_INCREMENT PRIMARY KEY, "
                 + "operation VARCHAR(100), "
-                + "operand1 VARCHAR(50), "
-                + "operand2 VARCHAR(50), "
+                + "operand1 BIGINT, "
                 + "result VARCHAR(50))";
-        runUpdate(query);
-        System.out.println("Таблица " + TABLE_NAME + " успешно создана!\n");
+        executeUpdate(query);
+        System.out.println("Таблица " + tableName + " успешно создана!\n");
     }
 
     private static void checkNumbers() {
@@ -111,55 +108,76 @@ public class ZadachaThree {
             try {
                 double val = Double.parseDouble(input);
                 if (val % 1 != 0) {
-                    System.out.println(input + " — нецелое число");
-                    insertIntoTable("NotInteger", input, "", "Invalid");
+                    System.out.println("Ошибка!" + input + " — Онецелое число");
                 } else {
-                    int intVal = (int) val;
-                    boolean isEven = intVal % 2 == 0;
+                    long longVal = (long) val;
+                    if (Double.parseDouble(Long.toString(longVal)) != val) {
+                        System.out.println("Ошибка! Введенное число превышает лимит long, попробуйте число поменьше. :3");
+                        continue;
+                    }
+                    boolean isEven = longVal % 2 == 0;
                     String result = isEven ? "Even" : "Odd";
-                    System.out.println(intVal + " — целое " + (isEven ? "четное" : "нечетное") + " число");
-                    insertIntoTable("Check", String.valueOf(intVal), "", result);
+                    System.out.println(longVal + " — целое " + (isEven ? "четное" : "нечетное") + " число");
+                    insertIntoTable("Check", longVal, result);
                 }
             } catch (NumberFormatException e) {
                 System.out.println("Ошибка: '" + input + "' не является числом");
-                insertIntoTable("NotNumber", input, "", "Invalid");
             }
         }
     }
 
-    private static void insertIntoTable(String operation, String op1, String op2, String result) {
-        String sql = "INSERT INTO " + TABLE_NAME + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
+    private static void insertIntoTable(String operation, long op1, String result) {
+        String sql = "INSERT INTO " + tableName + " (operation, operand1, result) VALUES (?, ?, ?)";
+        try (Connection conn = DriverManager.getConnection(url, username, password);
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, operation);
-            pstmt.setString(2, op1);
-            pstmt.setString(3, op2);
-            pstmt.setString(4, result);
+            pstmt.setLong(2, op1);
+            pstmt.setString(3, result);
             pstmt.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private static void displayTable() {
-        String sql = "SELECT * FROM " + TABLE_NAME;
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(sql)) {
+    private static void exportToXls() {
+        String fileName = "zadacha_three.xls";
 
-            ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
+        String filePath = "C:/Users/User/Desktop/" + fileName;
 
-            for (int i = 1; i <= cols; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
+        String query = "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
+
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Данные были сохранены в Excel.");
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его вручную или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            System.out.println();
+        }
+    }
+
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
+
+            System.out.printf("%-5s | %-15s | %-30s | %-20s%n",
+                    "ID", "Operation", "Operand1", "Result");
 
             while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String operation = rs.getString("operation");
+                Double operand1 = rs.getDouble("operand1");
+                String result = rs.getString("result");
+
+                System.out.printf("%-5d | %-15s | %-30.2f | %-20s%n",
+                        id, operation, operand1, result);
             }
 
         } catch (SQLException e) {
@@ -167,37 +185,13 @@ public class ZadachaThree {
         }
     }
 
-    private static void exportTableToCSV() {
-        String path = "src/main/resources/" + TABLE_NAME + ".csv";
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME);
-             FileWriter fw = new FileWriter(path)) {
-
-            ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
-
-            for (int i = 1; i <= cols; i++) {
-                fw.append(meta.getColumnName(i)).append(i < cols ? ";" : "\n");
-            }
-
-            while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    fw.append(rs.getString(i)).append(i < cols ? ";" : "\n");
-                }
-            }
-            System.out.println("Данные успешно экспортированы в файл CSV: " + path);
-
-        } catch (SQLException | IOException e) {
-            System.out.println("Ошибка при экспорте данных в CSV файл.");
-            e.printStackTrace();
-        }
+    private static Connection getConnection() throws SQLException {
+        return DriverManager.getConnection(url, username, password);
     }
-
-    private static void runUpdate(String sql) {
-        try (Connection conn = DriverManager.getConnection(DB_URL, DB_USER, DB_PASS);
-             Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate(sql);
+    private static void executeUpdate(String query) {
+        try {
+            Statement statement = getConnection().createStatement();
+            statement.executeUpdate(query);
         } catch (SQLException e) {
             e.printStackTrace();
         }

@@ -1,7 +1,5 @@
 package ru.linapelx.zadachi;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,9 +93,8 @@ public class ZadachaFour {
                 executeStatement(insertQuery(), "SubstringSearch", string1, string2, compare);
                 break;
             case 6:
-                exportToCsv(tableName, tableName);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
+                exportToXls();
+                selectAllFromTable();
                 break;
             case -1:
                 System.out.println("Выход из программы.");
@@ -180,63 +177,46 @@ public class ZadachaFour {
         }
     }
 
-    private static void exportToCsv(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
+    private static void exportToXls() {
+        String fileName = "zadacha_four.xls";
 
-            ResultSet resultSet = statement.executeQuery("SELECT * FROM " + tableName);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+        String filePath = "C:/Users/User/Desktop/" + fileName;
 
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
+        String query = "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
+
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Данные были сохранены в Excel.");
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его вручную или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query = (columnNames != null && columnNames.length > 0)
-                ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-        try (Statement statement = getConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+            System.out.printf("%-5s | %-15s | %-70s | %-70s | %-150s%n",
+                    "ID", "Operation", "Operand1", "Operand2", "Result");
 
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String operation = rs.getString("operation");
+                String operand1 = rs.getString("operand1");
+                String operand2 = rs.getString("operand2");
+                String result = rs.getString("result");
 
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.print(metaData.getColumnName(i) + "\t");
-            }
-            System.out.println();
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    System.out.print(resultSet.getString(i) + "\t");
-                }
-                System.out.println();
+                System.out.printf("%-5s | %-15s | %-70s | %-70s | %-150s%n",
+                        id, operation, operand1, operand2, result);
             }
 
         } catch (SQLException e) {
