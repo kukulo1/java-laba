@@ -1,14 +1,10 @@
 package ru.programming.problems.problemeight;
 
-import ru.programming.problems.problemeight.Worker;
-
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.util.List;
-import java.util.Scanner;
 
-public class InsertWorkerExecutioner extends Executioner {
-    public static void execute(Connection conn, Scanner scanner, String tableName, List<Worker> workers) {
+public class InsertWorkerExecutioner  extends ProblemEightSolver{
+    public static void execute(List<Worker> workers) {
         Worker worker = new Worker();
         System.out.print("Введите имя студента: ");
         worker.setName(scanner.nextLine());
@@ -17,7 +13,7 @@ public class InsertWorkerExecutioner extends Executioner {
         while (age < 0 || age > 100) {
             System.out.print("Введите возраст студента (0-100): ");
             while (!scanner.hasNextInt()) {
-                System.out.print("Ошибка. Введите целое число: ");
+                System.out.print("Введите возраст студента (0-100): ");
                 scanner.next();
             }
             age = scanner.nextInt();
@@ -28,7 +24,7 @@ public class InsertWorkerExecutioner extends Executioner {
         while (salary < 0) {
             System.out.print("Введите зарплату студента (неотрицательное число): ");
             while (!scanner.hasNextDouble()) {
-                System.out.print("Ошибка. Введите число: ");
+                System.out.print("Введите зарплату студента (неотрицательное число): ");
                 scanner.next();
             }
             salary = scanner.nextDouble();

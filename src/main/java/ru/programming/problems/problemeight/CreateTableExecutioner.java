@@ -1,10 +1,9 @@
 package ru.programming.problems.problemeight;
 
-import java.sql.Connection;
 import java.sql.Statement;
 
-public class CreateTableExecutioner extends Executioner {
-    public static void execute(Connection conn, String tableName) {
+public class CreateTableExecutioner extends ProblemEightSolver{
+    public static void execute() {
         try (Statement stmt = conn.createStatement()) {
             stmt.execute("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                     "id INT AUTO_INCREMENT PRIMARY KEY, " +

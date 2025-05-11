@@ -1,7 +1,5 @@
 package ru.programming.problems;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,7 +22,8 @@ public class ProblemOneSolver {
         do {
             printMenu();
             while (!scanner.hasNextInt()) {
-                System.out.print("Введите корректный номер действия: ");
+                System.out.println("Неверный выбор. Попробуйте снова.");
+                printMenu();
                 scanner.next();
             }
             choice = scanner.nextInt();
@@ -69,7 +68,7 @@ public class ProblemOneSolver {
         switch (choice) {
             case 1 -> printTables();
             case 2 -> {
-                createTable(tableName);
+                createTable();
                 tableExists = true;
             }
             case 3 -> {
@@ -129,12 +128,12 @@ public class ProblemOneSolver {
                 executeStatement(insertQuery(), "Power", base, power, result);
             }
             case 10 -> {
-                exportToCsv(tableName, tableName);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
+                exportToXls();
             }
             case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Попробуйте снова.");
+            default -> {
+                System.out.println("Неверный выбор. Попробуйте снова.");
+            }
         }
     }
 
@@ -142,7 +141,7 @@ public class ProblemOneSolver {
         return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
     }
 
-    private static void createTable(String tableName) {
+    private static void createTable() {
         executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "operation VARCHAR(255), " +
@@ -176,68 +175,44 @@ public class ProblemOneSolver {
         return tables;
     }
 
-    private static void exportToCsv(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
+    private static void exportToXls() {
+        String filePath = "C:/Users/User/Desktop/problem_one.xls";
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+        String query = "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
 
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Таблица была сохранена в Excel.");
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query;
-        if (columnNames != null && columnNames.length > 0) {
-            String columns = String.join(", ", columnNames);
-            query = "SELECT " + columns + " FROM " + tableName;
-        } else {
-            query = "SELECT * FROM " + tableName;
-        }
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-        try (Statement statement = getConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+            System.out.printf("%-5s | %-15s | %-30s | %-30s | %-200s%n",
+                    "ID", "Operation", "Operand1","Operand2", "Result");
 
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                String operation = rs.getString("operation");
+                Double operand1 = rs.getDouble("operand1");
+                Double operand2 = rs.getDouble("operand2");
+                Double result = rs.getDouble("result");
 
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.print(metaData.getColumnName(i) + "\t");
-            }
-            System.out.println();
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    System.out.print(resultSet.getString(i) + "\t");
-                }
-                System.out.println();
+                System.out.printf("%-5d | %-15s | %-30.2f | %-30.2f | %-30.2f%n",
+                        id, operation, operand1, operand2,  result);
             }
 
         } catch (SQLException e) {

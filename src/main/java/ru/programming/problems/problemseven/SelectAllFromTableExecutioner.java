@@ -2,41 +2,24 @@ package ru.programming.problems.problemseven;
 
 import java.sql.*;
 
-public class SelectAllFromTableExecutioner extends Executioner {
-    public static void execute(String tableName, String... columns) {
-        String query = (columns != null && columns.length > 0)
-                ? "SELECT " + String.join(", ", columns) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
+public class SelectAllFromTableExecutioner extends ProblemSevenSolver {
+    public static void execute() {
+        try (Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
-
-            ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
-
-            for (int i = 1; i <= cols; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
-            }
-            System.out.println();
+            System.out.printf("%-3s | %-20s | %-10s | %-20s\n", "ID", "Array name", "Index", "Value");
 
             while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    System.out.print(rs.getString(i) + "\t");
-                }
-                System.out.println();
+                int id = rs.getInt("id");
+                String arrayName = rs.getString("array_name");
+                int index = rs.getInt("index_pos");
+                long value = rs.getLong("value");
+
+                System.out.printf("%-3d | %-20s | %-10d | %-20d\n", id, arrayName, index, value);
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
-    }
-
-    private static Connection connect() throws SQLException {
-        return DriverManager.getConnection(
-                "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true",
-                "root",
-                "kukulo1"
-        );
     }
 }

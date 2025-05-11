@@ -2,8 +2,8 @@ package ru.programming.problems.problemeight;
 
 import java.sql.*;
 
-public class PrintTablesExecutioner extends Executioner {
-    public static void execute(Connection conn) {
+public class PrintTablesExecutioner extends ProblemEightSolver{
+    public static void execute() {
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW TABLES")) {
             while (rs.next()) {

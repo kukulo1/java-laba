@@ -4,9 +4,9 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrintTablesExecutioner extends Executioner {
-    public static void execute(ConnectionProvider provider) {
-        try (Statement statement = provider.getConnection().createStatement()) {
+public class PrintTablesExecutioner extends ProblemSixSolver{
+    public static void execute() {
+        try (Statement statement = conn.createStatement()) {
             ResultSet resultSet = statement.executeQuery("SHOW TABLES");
             List<String> tables = new ArrayList<>();
             while (resultSet.next()) {

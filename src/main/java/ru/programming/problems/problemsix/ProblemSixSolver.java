@@ -1,21 +1,22 @@
 package ru.programming.problems.problemsix;
 
-import ru.programming.problems.problemsix.*;
-
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.util.Scanner;
 
 public class ProblemSixSolver {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String tableName = "problem_six_table";
-    private static final ConnectionProvider connectionProvider =
-            new ConnectionProvider("jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true", "root", "kukulo1");
-
+    protected static final Scanner scanner = new Scanner(System.in);
+    protected static final String tableName = "problem_six_table";
+    private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
+    private static final String username = "root";
+    private static final String password = "kukulo1";
     private static boolean tableCreated = false;
-    private static Matrix matrix;
+    protected static Matrix matrix;
+    protected static Connection conn;
 
     public static void main(String[] args) {
         try {
-            connectionProvider.getConnection().createStatement().execute("DROP TABLE IF EXISTS " + tableName);
+            conn = DriverManager.getConnection(url, username, password);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -24,7 +25,7 @@ public class ProblemSixSolver {
         do {
             printMenu();
             while (!scanner.hasNextInt()) {
-                System.out.print("Введите корректный номер действия: ");
+                System.out.println("Неверный выбор. Повторите.");
                 scanner.next();
             }
             choice = scanner.nextInt();
@@ -36,16 +37,18 @@ public class ProblemSixSolver {
             }
 
             switch (choice) {
-                case 1 -> PrintTablesExecutioner.execute(connectionProvider);
+                case 1 -> PrintTablesExecutioner.execute();
                 case 2 -> {
-                    CreateTableExecutioner.execute(connectionProvider, tableName);
+                    CreateTableExecutioner.execute();
                     tableCreated = true;
                 }
-                case 3 -> matrix = InputMatricesExecutioner.execute(scanner, connectionProvider, tableName);
-                case 4 -> MultiplyMatricesExecutioner.execute(matrix, connectionProvider, tableName);
-                case 5 -> ExportToCsvExecutioner.execute(connectionProvider, tableName);
+                case 3 -> matrix = InputMatricesExecutioner.execute();
+                case 4 -> MultiplyMatricesExecutioner.execute();
+                case 5 -> ExportToXlsExecutioner.execute();
                 case -1 -> System.out.println("Выход из программы.");
-                default -> System.out.println("Неверный выбор. Повторите.");
+                default -> {
+                    System.out.println("Неверный выбор. Повторите.");
+                }
             }
         } while (choice != -1);
     }

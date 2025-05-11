@@ -1,7 +1,5 @@
 package ru.programming.problems;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +21,7 @@ public class ProblemThreeSolver {
         do {
             printMenu();
             while (!scanner.hasNextInt()) {
-                System.out.print("Введите корректный номер действия: ");
+                System.out.println("Неверный выбор. Повторите.");
                 scanner.next();
             }
             choice = scanner.nextInt();
@@ -67,42 +65,44 @@ public class ProblemThreeSolver {
                     try {
                         double number = Double.parseDouble(input);
                         if (number % 1 != 0) {
-                            System.out.println(number + " — нецелое число");
-                            executeStatement(insertQuery(), "NotInteger", input, null, "Invalid");
+                            System.out.println("Ошибка: '" + number + "' — нецелое число");
                             continue;
                         }
-                        int intVal = (int) number;
-                        boolean even = intVal % 2 == 0;
+                        long longVal = (long) number;
+                        if (Double.parseDouble(Long.toString(longVal)) != number) {
+                            System.out.println("Ошибка! Введенное число превышает лимит long, попробуйте число поменьше.");
+                            continue;
+                        }
+                        boolean even = longVal % 2 == 0;
                         String result = even ? "Even" : "Odd";
-                        System.out.println(intVal + " — целое " + (even ? "четное" : "нечетное") + " число");
-                        executeStatement(insertQuery(), "Check", String.valueOf(intVal), null, result);
+                        System.out.println(longVal + " — целое " + (even ? "четное" : "нечетное") + " число");
+                        executeStatement(insertQuery(), String.valueOf(longVal), result);
                     } catch (NumberFormatException e) {
                         System.out.println("Ошибка: '" + input + "' не является числом");
-                        executeStatement(insertQuery(), "NotNumber", input, null, "Invalid");
                     }
                 }
             }
             case 4 -> {
-                exportToCsv(tableName, tableName);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(tableName, "id", "operation", "operand1", "operand2", "result");
+                exportToXls();
             }
             case -1 -> System.out.println("Выход из программы.");
-            default -> System.out.println("Неверный выбор. Повторите.");
+            default -> {
+                System.out.println("Неверный выбор. Повторите.");
+
+            }
         }
     }
 
     private static String insertQuery() {
-        return "INSERT INTO " + tableName + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+        return "INSERT INTO " + tableName + " (operand1, result) VALUES (?, ?)";
     }
 
     private static void createTable() {
-        executeStatement("CREATE TABLE IF NOT EXISTS " + tableName + " (" +
-                "id INT AUTO_INCREMENT PRIMARY KEY, " +
-                "operation VARCHAR(255), " +
-                "operand1 VARCHAR(255), " +
-                "operand2 VARCHAR(255), " +
-                "result VARCHAR(255))");
+        String query = "CREATE TABLE IF NOT EXISTS " + tableName + " ("
+                + "id INT AUTO_INCREMENT PRIMARY KEY, "
+                + "operand1 BIGINT, "
+                + "result VARCHAR(50))";
+        executeStatement(query);
         System.out.println("Таблица " + tableName + " успешно создана!");
     }
 
@@ -130,64 +130,42 @@ public class ProblemThreeSolver {
         return tables;
     }
 
-    private static void exportToCsv(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = getConnection().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
+    private static void exportToXls() {
+        String filePath = "C:/Users/User/Desktop/problem_three.xls";
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+        String query = "SELECT 'id', 'operand1', 'result' " +
+                "UNION ALL " +
+                "SELECT * FROM " + tableName + " " +
+                "INTO OUTFILE '" + filePath + "' " +
+                "CHARACTER SET cp1251";
 
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
+        try (PreparedStatement stmt = getConnection().prepareStatement(query)) {
+            stmt.executeQuery();
+            System.out.println("Таблица была сохранена в Excel.");
+            selectAllFromTable();
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Ошибка: файл уже существует. Удалите его или выберите другое имя.");
+            } else {
+                System.out.println("Ошибка при сохранении в Excel: " + msg);
             }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
+    private static void selectAllFromTable() {
+        try (Statement stmt = getConnection().createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query = (columnNames != null && columnNames.length > 0)
-                ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
+            System.out.printf("%-5s | %-30s | %-20s%n",
+                    "ID", "Operand1", "Result");
 
-        try (Statement statement = getConnection().createStatement();
-             ResultSet resultSet = statement.executeQuery(query)) {
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                Double operand1 = rs.getDouble("operand1");
+                String result = rs.getString("result");
 
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
-
-            for (int i = 1; i <= columnCount; i++) {
-                System.out.print(metaData.getColumnName(i) + "\t");
-            }
-            System.out.println();
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    System.out.print(resultSet.getString(i) + "\t");
-                }
-                System.out.println();
+                System.out.printf("%-5d | %-30.2f | %-20s%n",
+                        id, operand1, result);
             }
 
         } catch (SQLException e) {

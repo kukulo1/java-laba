@@ -1,23 +1,27 @@
 package ru.programming.problems.problemeight;
 
-import ru.programming.problems.problemeight.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.*;
 
 public class ProblemEightSolver {
-    private static final Scanner scanner = new Scanner(System.in);
+    protected static final Scanner scanner = new Scanner(System.in);
     private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
     private static final String username = "root";
     private static final String password = "kukulo1";
-    private static final String tableName = "problem_eight_table";
+    protected static final String tableName = "problem_eight_table";
     private static final List<Worker> workers = new ArrayList<>();
     private static boolean tableExists = false;
+    protected static Connection conn;
 
     public static void main(String[] args) {
-        try (Connection conn = DriverManager.getConnection(url, username, password)) {
+        try {
+            conn = DriverManager.getConnection(url, username, password);
+        }catch (SQLException e) {
+            e.printStackTrace();
+        }
+        try {
             conn.createStatement().execute("DROP TABLE IF EXISTS " + tableName);
 
             int choice;
@@ -36,16 +40,18 @@ public class ProblemEightSolver {
                 }
 
                 switch (choice) {
-                    case 1 -> PrintTablesExecutioner.execute(conn);
+                    case 1 -> PrintTablesExecutioner.execute();
                     case 2 -> {
-                        CreateTableExecutioner.execute(conn, tableName);
+                        CreateTableExecutioner.execute();
                         tableExists = true;
                     }
-                    case 3 -> InsertWorkerExecutioner.execute(conn, scanner, tableName, workers);
-                    case 4 -> SelectAllFromTableExecutioner.execute(conn, tableName);
-                    case 5 -> ExportToCsvExecutioner.execute(conn, tableName);
+                    case 3 -> InsertWorkerExecutioner.execute(workers);
+                    case 4 -> SelectAllFromTableExecutioner.execute();
+                    case 5 -> ExportToXlsExecutioner.execute();
                     case -1 -> System.out.println("Выход из программы.");
-                    default -> System.out.println("Неверный выбор. Повторите.");
+                    default -> {
+                        System.out.println("Неверный выбор. Повторите.");
+                    }
                 }
 
             } while (choice != -1);
