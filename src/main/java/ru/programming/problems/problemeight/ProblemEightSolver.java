@@ -9,7 +9,7 @@ public class ProblemEightSolver {
     protected static final Scanner scanner = new Scanner(System.in);
     private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
     private static final String username = "root";
-    private static final String password = "kukulo1";
+    private static final String password = "root";
     protected static final String tableName = "problem_eight_table";
     private static final List<Worker> workers = new ArrayList<>();
     private static boolean tableExists = false;

@@ -11,7 +11,7 @@ public class ProblemFiveSolver {
     private static final Scanner scanner = new Scanner(System.in);
     private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
     private static final String username = "root";
-    private static final String password = "kukulo1";
+    private static final String password = "root";
     private static final String tableName = "problem_five_table";
     private static boolean tableExists = false;
 

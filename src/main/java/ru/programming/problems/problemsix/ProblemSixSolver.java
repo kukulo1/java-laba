@@ -9,7 +9,7 @@ public class ProblemSixSolver {
     protected static final String tableName = "problem_six_table";
     private static final String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
     private static final String username = "root";
-    private static final String password = "kukulo1";
+    private static final String password = "root";
     private static boolean tableCreated = false;
     protected static Matrix matrix;
     protected static Connection conn;
