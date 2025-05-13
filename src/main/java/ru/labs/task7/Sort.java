@@ -7,8 +7,24 @@ public final class Sort extends ArrayPI {
 
     public void inputArray() {
         System.out.println("Введите 35 целых чисел:");
+
         for (int i = 0; i < array.length; i++) {
-            array[i] = scanner.nextInt();
+            while (true) {
+                System.out.print("Элемент " + (i + 1) + ": ");
+                String input = scanner.nextLine();
+
+                if (!input.matches("-?\\d+")) {
+                    System.out.println("Ошибка: введите целое число.");
+                    continue;
+                }
+
+                try {
+                    array[i] = Integer.parseInt(input);
+                    break;
+                } catch (NumberFormatException e) {
+                    System.out.println("Ошибка: число выходит за пределы допустимого диапазона int.");
+                }
+            }
         }
     }
 

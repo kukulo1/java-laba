@@ -89,9 +89,8 @@ public class TaskTwoRunner {
                 System.out.println("Сравнение: " + comparison);
             }
             case 7 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "operation", "value1", "value2", "result");
+                DbHelper.exportToXls(TABLE_NAME, TABLE_NAME);
+                DbHelper.selectAllFromTable(TABLE_NAME, new String[]{"id", "operation", "value1", "value2", "result"}, new int[]{3, 20, 100, 100, 200});
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");

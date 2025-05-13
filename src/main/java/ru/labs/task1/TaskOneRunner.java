@@ -101,9 +101,8 @@ public class TaskOneRunner {
                         "Power", String.valueOf(base), String.valueOf(power), String.valueOf(result));
             }
             case 10 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "operation", "value1", "value2", "result");
+                DbHelper.exportToXls(TABLE_NAME, TABLE_NAME);
+                DbHelper.selectAllFromTable(TABLE_NAME, new String[]{"id", "operation", "value1", "value2", "result"}, new int[]{3, 20, 10, 10, 20});
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Попробуйте снова.");

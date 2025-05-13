@@ -2,10 +2,9 @@ package ru.labs.task8;
 
 import ru.labs.DbHelper;
 
-public class ExportToExcelExecutioner extends Executioner {
-    public static void execute(String tableName) {
-        DbHelper.exportToCsv(tableName, tableName);
-        System.out.println("Данные были сохранены в Excel.");
-        DbHelper.selectAllFromTable(tableName, "id", "name", "age", "salary");
+public class ExportToExcelExecutioner extends TaskEightRunner {
+    public static void execute() {
+        DbHelper.exportToXls(TABLE_NAME, TABLE_NAME);
+        DbHelper.selectAllFromTable(TABLE_NAME, new String[]{"id", "name", "age", "salary"}, new int[]{3, 20, 4, 100});
     }
 }

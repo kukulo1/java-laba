@@ -5,14 +5,14 @@ import ru.labs.DbHelper;
 import java.util.InputMismatchException;
 import java.util.Scanner;
 
-public class InputMatricesExecutioner extends Executioner{
-    public static void execute(Scanner scanner, String tableName, Matrix matrixContainer) {
+public class InputMatricesExecutioner extends TaskSixRunner {
+    public static void execute() {
         try {
-            matrixContainer.inputMatricesFromKeyboard();
-            matrixContainer.printMatrix(matrixContainer.arrayA, "Первая матрица:");
-            matrixContainer.printMatrix(matrixContainer.arrayB, "Вторая матрица:");
-            insertMatrix(matrixContainer.arrayA, "matrix_A", tableName);
-            insertMatrix(matrixContainer.arrayB, "matrix_B", tableName);
+            matrix.inputMatricesFromKeyboard();
+            matrix.printMatrix(matrix.arrayA, "Первая матрица:");
+            matrix.printMatrix(matrix.arrayB, "Вторая матрица:");
+            insertMatrix(matrix.arrayA, "matrix_A", TABLE_NAME);
+            insertMatrix(matrix.arrayB, "matrix_B", TABLE_NAME);
         } catch (InputMismatchException e) {
             System.out.println("Ошибка ввода: необходимо вводить только числа. Повторите снова.");
             scanner.nextLine();

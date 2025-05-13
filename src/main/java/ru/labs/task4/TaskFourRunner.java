@@ -60,12 +60,21 @@ public class TaskFourRunner {
                 System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
             }
             case 3 -> {
-                int start = readIndex("Введите начальный индекс подстроки: ");
-                int end = readIndex("Введите конечный индекс подстроки: ");
-                String sub1 = safeSubstring(inputOne, start, end);
-                String sub2 = safeSubstring(inputTwo, start, end);
-                String result = "Substring1: " + sub1 + "; Substring2: " + sub2;
+                System.out.println("Из какой строки извлекать подстроку?");
+                System.out.println("1. inputOne");
+                System.out.println("2. inputTwo");
+
+                int selected = readSafeIndex("Выберите номер строки (1 или 2): ", 1, 2);
+                String selectedInput = (selected == 1) ? inputOne : inputTwo;
+
+                int start = readSafeIndex("Введите начальный индекс подстроки: ", 0, selectedInput.length());
+                int end = readSafeIndex("Введите конечный индекс подстроки: ", start, selectedInput.length());
+
+                String sub = safeSubstring(selectedInput, start, end);
+
+                String result = sub;
                 System.out.println(result);
+
                 DbHelper.execute("INSERT INTO " + TABLE_NAME + " (operation, value1, value2, result) VALUES (?, ?, ?, ?)",
                         "Substring", inputOne, inputTwo, result);
             }
@@ -93,9 +102,8 @@ public class TaskFourRunner {
                         "SearchEndCheck", inputOne, inputTwo, result);
             }
             case 6 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "operation", "value1", "value2", "result");
+                DbHelper.exportToXls(TABLE_NAME, TABLE_NAME);
+                DbHelper.selectAllFromTable(TABLE_NAME, new String[]{"id", "operation", "value1", "value2", "result"}, new int[]{3, 20, 100, 100, 200});
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
@@ -114,17 +122,28 @@ public class TaskFourRunner {
         return input;
     }
 
-    private static int readIndex(String prompt) {
-        int index;
+    private static int readSafeIndex(String prompt, int min, int max) {
         while (true) {
             System.out.print(prompt);
-            if (scanner.hasNextInt()) {
-                index = scanner.nextInt();
-                scanner.nextLine();
-                return index;
-            } else {
-                System.out.println("Введите целое число.");
-                scanner.next();
+            String input = scanner.nextLine();
+
+            if (!input.matches("\\d+")) {
+                System.out.println("Ошибка: введите неотрицательное целое число.");
+                continue;
+            }
+
+            try {
+                int value = Integer.parseInt(input);
+
+                if (value < min || value > max) {
+                    System.out.printf("Ошибка: индекс должен быть в диапазоне от %d до %d.%n", min, max);
+                    continue;
+                }
+
+                return value;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Ошибка: число выходит за пределы допустимого диапазона int.");
             }
         }
     }

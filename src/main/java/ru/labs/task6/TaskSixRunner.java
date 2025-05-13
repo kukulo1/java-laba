@@ -6,10 +6,10 @@ import ru.labs.task6.*;
 import java.util.Scanner;
 
 public class TaskSixRunner {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String TABLE_NAME = "lab6_matrix";
+    protected static final Scanner scanner = new Scanner(System.in);
+    protected static final String TABLE_NAME = "lab6_matrix";
     private static boolean isTableCreated = false;
-    private static final Matrix matrix = new Matrix();
+    protected static final Matrix matrix = new Matrix();
 
     public static void main(String[] args) {
         DbHelper.execute("DROP TABLE IF EXISTS " + TABLE_NAME);
@@ -32,12 +32,12 @@ public class TaskSixRunner {
             switch (userChoice) {
                 case 1 -> ListTablesExecutioner.execute();
                 case 2 -> {
-                    CreateTableExecutioner.execute(TABLE_NAME);
+                    CreateTableExecutioner.execute();
                     isTableCreated = true;
                 }
-                case 3 -> InputMatricesExecutioner.execute(scanner, TABLE_NAME, matrix);
-                case 4 -> MultiplyMatricesExecutioner.execute(TABLE_NAME, matrix);
-                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case 3 -> InputMatricesExecutioner.execute();
+                case 4 -> MultiplyMatricesExecutioner.execute();
+                case 5 -> ExportToExcelExecutioner.execute();
                 case -1 -> System.out.println("Выход из программы.");
                 default -> System.out.println("Неверный выбор. Повторите.");
             }

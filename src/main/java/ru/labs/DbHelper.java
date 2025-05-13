@@ -1,7 +1,5 @@
 package ru.labs;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -11,7 +9,7 @@ public class DbHelper {
     private static Connection connect() throws SQLException {
         String url = "jdbc:mysql://localhost:3306/my_db?createDatabaseIfNotExist=true";
         String user = "root";
-        String pass = "kukulo1";
+        String pass = "root";
         return DriverManager.getConnection(url, user, pass);
     }
 
@@ -26,40 +24,55 @@ public class DbHelper {
         }
     }
 
-    public static void exportToCsv(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
+    public static void exportToXls(String tableName, String fileName) {
+        String filePath = "C:/Users/User/Desktop/" + fileName + ".xls";
+        String columnList;
+
+        //получаем список колонок из ResultSetMetaData
         try (Statement stmt = connect().createStatement();
-             FileWriter writer = new FileWriter(filePath)) {
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " LIMIT 1")) {
 
-            ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName);
             ResultSetMetaData meta = rs.getMetaData();
-            int cols = meta.getColumnCount();
+            int colCount = meta.getColumnCount();
 
-            for (int i = 1; i <= cols; i++) {
-                writer.append('"').append(meta.getColumnName(i)).append('"');
-                if (i < cols) writer.append(";");
-            }
-            writer.append("\n");
-
-            while (rs.next()) {
-                for (int i = 1; i <= cols; i++) {
-                    String val = rs.getString(i);
-                    writer.append('"');
-                    if (val != null) writer.append(val.replace("\"", "\"\""));
-                    writer.append('"');
-                    if (i < cols) writer.append(";");
-                }
-                writer.append("\n");
+            List<String> quotedColumns = new ArrayList<>();
+            for (int i = 1; i <= colCount; i++) {
+                quotedColumns.add("'" + meta.getColumnName(i) + "'");
             }
 
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
+            columnList = String.join(", ", quotedColumns);
+
+        } catch (SQLException e) {
+            System.out.println("Ошибка при получении структуры таблицы: " + e.getMessage());
+            return;
+        }
+
+        //SQL-запрос на экспорт в файл .xls
+        String exportQuery = "SELECT " + columnList +
+                " UNION ALL SELECT * FROM " + tableName +
+                " INTO OUTFILE '" + filePath.replace("\\", "/") + "'" +
+                " CHARACTER SET cp1251";
+
+        //выполняем экспорт
+        try (Statement stmt = connect().createStatement()) {
+            stmt.execute(exportQuery);
+            System.out.println("Экспорт завершён успешно: " + filePath);
+        } catch (SQLException e) {
+            String msg = e.getMessage();
+            if (msg != null && msg.contains("already exists")) {
+                System.out.println("Файл уже существует! Удалите его и попробуйте ещё раз.");
+            } else {
+                System.out.println("Ошибка при экспорте: " + msg);
+            }
         }
     }
 
-    public static void selectAllFromTable(String tableName, String... columns) {
+
+    public static void selectAllFromTable(String tableName, String[] columns, int[] widths) {
+        if (columns != null && widths != null && columns.length != widths.length) {
+            throw new IllegalArgumentException("Количество колонок и ширин не совпадает.");
+        }
+
         String query = (columns != null && columns.length > 0)
                 ? "SELECT " + String.join(", ", columns) + " FROM " + tableName
                 : "SELECT * FROM " + tableName;
@@ -70,22 +83,27 @@ public class DbHelper {
             ResultSetMetaData meta = rs.getMetaData();
             int cols = meta.getColumnCount();
 
+            //заголовки
             for (int i = 1; i <= cols; i++) {
-                System.out.print(meta.getColumnName(i) + "\t");
+                int width = (widths != null && i <= widths.length) ? widths[i - 1] : 15;
+                System.out.printf("| %-" + width + "s", meta.getColumnName(i));
             }
-            System.out.println();
+            System.out.println("|");
 
+            //данные
             while (rs.next()) {
                 for (int i = 1; i <= cols; i++) {
-                    System.out.print(rs.getString(i) + "\t");
+                    int width = (widths != null && i <= widths.length) ? widths[i - 1] : 15;
+                    System.out.printf("| %-" + width + "s", rs.getString(i));
                 }
-                System.out.println();
+                System.out.println("|");
             }
 
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
+
 
     public static void listTables() {
         List<String> tables = new ArrayList<>();

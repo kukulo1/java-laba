@@ -8,10 +8,10 @@ import java.util.List;
 import java.util.Scanner;
 
 public class TaskEightRunner {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String TABLE_NAME = "lab8_workers";
+    protected static final Scanner scanner = new Scanner(System.in);
+    protected static final String TABLE_NAME = "lab8_workers";
     private static boolean isTableCreated = false;
-    private static final List<Worker> workers = new ArrayList<>();
+    protected static final List<Worker> workers = new ArrayList<>();
 
     public static void main(String[] args) {
         DbHelper.execute("DROP TABLE IF EXISTS " + TABLE_NAME);
@@ -35,14 +35,14 @@ public class TaskEightRunner {
             switch (choice) {
                 case 1 -> ListTablesExecutioner.execute();
                 case 2 -> {
-                    CreateTableExecutioner.execute(TABLE_NAME);
+                    CreateTableExecutioner.execute();
                     isTableCreated = true;
                 }
-                case 3 -> InsertWorkerExecutioner.execute(scanner, TABLE_NAME, workers);
-                case 4 -> PrintAllWorkersExecutioner.execute(TABLE_NAME);
-                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case 3 -> InsertWorkerExecutioner.execute();
+                case 4 -> PrintAllWorkersExecutioner.execute();
+                case 5 -> ExportToExcelExecutioner.execute();
                 case -1 -> System.out.println("Выход из программы.");
-                default -> System.out.println("Неверный выбор. Повторите.");
+                default -> System.out.print("Введите корректный номер действия: ");
             }
         } while (choice != -1);
     }

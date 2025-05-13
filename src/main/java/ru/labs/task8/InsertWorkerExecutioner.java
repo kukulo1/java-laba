@@ -1,53 +1,78 @@
 package ru.labs.task8;
 
 import ru.labs.DbHelper;
-import ru.labs.task8.Worker;
 
-import java.util.List;
-import java.util.Scanner;
 
-public class InsertWorkerExecutioner extends Executioner {
-    public static void execute(Scanner scanner, String tableName, List<Worker> workers) {
+public class InsertWorkerExecutioner extends TaskEightRunner {
+    public static void execute() {
         Worker worker = new Worker();
         System.out.print("Введите имя студента: ");
         worker.setName(scanner.nextLine());
 
-        worker.setAge(readInt(scanner, "Введите возраст студента (0-100): ", 0, 100));
-        worker.setSalary(readDouble(scanner, "Введите зарплату студента (неотрицательное число): ", 0));
+        worker.setAge(readInt("Введите возраст студента (0-100): ", 0, 100));
+        worker.setSalary(readDouble("Введите зарплату студента (неотрицательное число): ", 0));
 
         workers.add(worker);
-        DbHelper.execute("INSERT INTO " + tableName + " (name, age, salary) VALUES (?, ?, ?)",
+        DbHelper.execute("INSERT INTO " + TABLE_NAME + " (name, age, salary) VALUES (?, ?, ?)",
                 worker.getName(), worker.getAge(), worker.getSalary());
 
         System.out.printf("Добавлен: %s, %d лет, зарплата %.2f\n",
                 worker.getName(), worker.getAge(), worker.getSalary());
     }
 
-    private static int readInt(Scanner scanner, String prompt, int min, int max) {
+    private static int readInt(String prompt, int min, int max) {
         int value;
-        do {
+        while (true) {
             System.out.print(prompt);
-            while (!scanner.hasNextInt()) {
-                System.out.print("Ошибка. Введите целое число: ");
-                scanner.next();
+            String input = scanner.nextLine();
+
+            // Проверка: только цифры (и возможный минус)
+            if (!input.matches("-?\\d+")) {
+                System.out.println("Ошибка. Введите целое число.");
+                continue;
             }
-            value = scanner.nextInt();
-        } while (value < min || value > max);
-        scanner.nextLine();
-        return value;
+
+            try {
+                value = Integer.parseInt(input);
+            } catch (NumberFormatException e) {
+                System.out.println("Ошибка. Введённое число выходит за пределы типа int.");
+                continue;
+            }
+
+            if (value < min || value > max) {
+                System.out.printf("Ошибка. Введите число в диапазоне от %d до %d.%n", min, max);
+                continue;
+            }
+
+            return value;
+        }
     }
 
-    private static double readDouble(Scanner scanner, String prompt, double min) {
+    private static double readDouble(String prompt, double min) {
         double value;
-        do {
+
+        while (true) {
             System.out.print(prompt);
-            while (!scanner.hasNextDouble()) {
-                System.out.print("Ошибка. Введите число: ");
-                scanner.next();
+            String input = scanner.nextLine();
+
+            try {
+                value = Double.parseDouble(input);
+
+                if (Double.isNaN(value) || Double.isInfinite(value)) {
+                    System.out.println("Ошибка. Введённое значение не является допустимым числом.");
+                    continue;
+                }
+
+                if (value < min) {
+                    System.out.printf("Ошибка. Число должно быть не меньше %.2f.%n", min);
+                    continue;
+                }
+
+                return value;
+
+            } catch (NumberFormatException e) {
+                System.out.println("Ошибка. Введите корректное число (например: 3.14).");
             }
-            value = scanner.nextDouble();
-        } while (value < min);
-        scanner.nextLine();
-        return value;
+        }
     }
 }

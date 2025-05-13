@@ -1,16 +1,15 @@
 package ru.labs.task7;
 
 import ru.labs.DbHelper;
-import ru.labs.task7.*;
 
 import java.util.Scanner;
 
 public class TaskSevenRunner {
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String TABLE_NAME = "lab7_array";
+    protected static final Scanner scanner = new Scanner(System.in);
+    protected static final String TABLE_NAME = "lab7_array";
     private static boolean isTableCreated = false;
 
-    private static Sort sort;
+    protected static Sort sort;
 
     public static void main(String[] args) {
         DbHelper.execute("DROP TABLE IF EXISTS " + TABLE_NAME);
@@ -34,23 +33,23 @@ public class TaskSevenRunner {
             switch (userChoice) {
                 case 1 -> ListTablesExecutioner.execute();
                 case 2 -> {
-                    CreateTableExecutioner.execute(TABLE_NAME);
+                    CreateTableExecutioner.execute();
                     isTableCreated = true;
                 }
                 case 3 -> {
                     sort = new Sort();
-                    InputArrayExecutioner.execute(scanner, TABLE_NAME, sort);
+                    InputArrayExecutioner.execute();
                 }
                 case 4 -> {
                     if (sort == null) {
                         System.out.println("Ошибка: массив не был введён ранее.");
                     } else {
-                        SortArrayExecutioner.execute(TABLE_NAME, sort);
+                        SortArrayExecutioner.execute();
                     }
                 }
-                case 5 -> ExportToExcelExecutioner.execute(TABLE_NAME);
+                case 5 -> ExportToExcelExecutioner.execute();
                 case -1 -> System.out.println("Выход из программы.");
-                default -> System.out.println("Неверный выбор. Повторите.");
+                default -> System.out.print("Введите корректный номер действия: ");
             }
         } while (userChoice != -1);
     }

@@ -54,9 +54,8 @@ public class TaskThreeRunner {
             }
             case 3 -> runNumberCheck();
             case 4 -> {
-                DbHelper.exportToCsv(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                DbHelper.selectAllFromTable(TABLE_NAME, "id", "operation", "value1", "result");
+                DbHelper.exportToXls(TABLE_NAME, TABLE_NAME);
+                DbHelper.selectAllFromTable(TABLE_NAME, new String[]{"id", "operation", "value1", "result"}, new int[]{3, 20, 10, 20});
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
@@ -73,8 +72,10 @@ public class TaskThreeRunner {
                 double number = Double.parseDouble(input);
                 if (number % 1 != 0) {
                     System.out.println(number + " — нецелое число");
-                    DbHelper.execute("INSERT INTO " + TABLE_NAME + " (operation, value1, result) VALUES (?, ?, ?)",
-                            "NotInteger", input, "Invalid");
+                    continue;
+                }
+                if (number > Integer.MAX_VALUE || number < Integer.MIN_VALUE) {
+                    System.out.println("Ошибка: число выходит за пределы int.");
                     continue;
                 }
                 int intVal = (int) number;
@@ -85,8 +86,6 @@ public class TaskThreeRunner {
                         "Check", String.valueOf(intVal), result);
             } catch (NumberFormatException e) {
                 System.out.println("Ошибка: '" + input + "' не является числом");
-                DbHelper.execute("INSERT INTO " + TABLE_NAME + " (operation, value1, result) VALUES (?, ?, ?)",
-                        "NotNumber", input, "Invalid");
             }
         }
     }
