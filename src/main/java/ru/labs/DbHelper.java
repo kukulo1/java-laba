@@ -25,7 +25,7 @@ public class DbHelper {
     }
 
     public static void exportToXls(String tableName, String fileName) {
-        String filePath = "C:/Users/User/Desktop/" + fileName + ".xls";
+        String filePath = "C:/Users/User/Desktop/java_labs/" + fileName + ".xls";
         String columnList;
 
         //получаем список колонок из ResultSetMetaData
