@@ -15,7 +15,7 @@ public class ExportToXls extends TaskSix {
             fileName = scanner.nextLine().trim();
         }
 
-        String filePath = "C:/Users/User/Desktop/" + fileName;
+        String filePath = "C:/Users/elvin/Desktop/" + fileName;
 
         String exportQuery =
                 "SELECT 'id', 'matrix_name', 'row_index', 'col_index', 'value' " +

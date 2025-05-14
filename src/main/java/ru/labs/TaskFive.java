@@ -8,7 +8,7 @@ import java.util.Scanner;
 public class TaskFive {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "root";
+    private static final String PASSWORD = "elis";
     private static Scanner scanner = new Scanner(System.in);
     private static final String TABLE_NAME = "table_five";
     private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
@@ -161,7 +161,7 @@ public class TaskFive {
             fileName = scanner.nextLine().trim();
         }
 
-        String filePath = "C:/Users/User/Desktop/" + fileName;
+        String filePath = "C:/Users/elvin/Desktop/" + fileName;
 
         String exportQuery =
                 "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +

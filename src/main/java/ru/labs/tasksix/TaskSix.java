@@ -8,7 +8,7 @@ import java.util.Scanner;
 public class TaskSix {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "root";
+    private static final String PASSWORD = "elis";
     protected static final Scanner scanner = new Scanner(System.in);
     protected static final String TABLE_NAME = "table_six";
     protected static Connection conn;

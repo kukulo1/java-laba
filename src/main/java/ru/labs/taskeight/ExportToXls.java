@@ -16,7 +16,7 @@ public class ExportToXls extends TaskEight {
             fileName = scanner.nextLine().trim();
         }
 
-        String filePath = "C:/Users/User/Desktop/" + fileName;
+        String filePath = "C:/Users/elvin/Desktop/" + fileName;
 
         String query1 = "SET SQL_SAFE_UPDATES = 0";
         String query3 = "UPDATE " + TABLE_NAME + " SET salary = ROUND(salary, 2)";
