@@ -10,10 +10,10 @@ import java.util.Scanner;
 public class TaskThree {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
-    private static final String PASSWORD = "kukulo1";
+    private static final String PASSWORD = "root";
     private static Scanner scanner = new Scanner(System.in);
     private static final String TABLE_NAME = "table_three";
-    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (operation, operand1, operand2, result) VALUES (?, ?, ?, ?)";
+    private static final String INSERT_QUERY = "INSERT INTO " + TABLE_NAME + " (operation, operand1, result) VALUES (?, ?, ?)";
 
     private static boolean tableExists = false;
 
@@ -48,8 +48,7 @@ public class TaskThree {
         executeUpdate("CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "operation VARCHAR(255), " +
-                "operand1 VARCHAR(255), " +
-                "operand2 VARCHAR(255), " +
+                "operand1 INT, " +
                 "result VARCHAR(255))");
         System.out.println("Таблица " + TABLE_NAME + " успешно создана!");
     }
@@ -77,33 +76,55 @@ public class TaskThree {
             }
             case 3 -> {
                 System.out.println("Введите числа через пробел (для завершения введите 'q'):");
+
                 while (true) {
                     String input = scanner.next();
+
                     if (input.equalsIgnoreCase("q")) {
                         break;
                     }
+
+                    if (input.trim().isEmpty()) {
+                        System.out.println("Пустой ввод. Повторите.");
+                        continue;
+                    }
+
                     try {
                         double number = Double.parseDouble(input);
-                        if (number % 1 != 0) {
-                            System.out.println(number + " — нецелое число");
-                            executeUpdate(INSERT_QUERY, "NotInteger", input, null, "Invalid");
+
+                        if (Double.isInfinite(number) || Double.isNaN(number)) {
+                            System.out.println("Ошибка: значение не является конечным числом.");
                             continue;
                         }
+
+                        if (number % 1 != 0) {
+                            System.out.println("Ошибка: " + number + " — нецелое число");
+                            continue;
+                        }
+
                         int intVal = (int) number;
+
+                        // проверка возможной потери точности при касте
+                        if ((double) intVal != number) {
+                            System.out.println("Ошибка: число выходит за пределы типа int.");
+                            continue;
+                        }
+
                         boolean even = intVal % 2 == 0;
                         String result = even ? "Even" : "Odd";
                         System.out.println(intVal + " — целое " + (even ? "четное" : "нечетное") + " число");
-                        executeUpdate(INSERT_QUERY, "Check", String.valueOf(intVal), null, result);
+
+                        executeUpdate(INSERT_QUERY, "Check", String.valueOf(intVal), result);
+
                     } catch (NumberFormatException e) {
                         System.out.println("Ошибка: '" + input + "' не является числом");
-                        executeUpdate(INSERT_QUERY, "NotNumber", input, null, "Invalid");
                     }
                 }
+
             }
             case 4 -> {
-                getExcel(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(TABLE_NAME, "id", "operation", "operand1", "operand2", "result");
+                getExcel();
+                selectAllFromTable();
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
@@ -145,47 +166,43 @@ public class TaskThree {
         }
     }
 
-    private static void getExcel(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = connect().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
+    private static void getExcel() {
+        Scanner scanner = new Scanner(System.in);
+        System.out.print("Введите имя файла с расширением (.xls): ");
+        String fileName = scanner.nextLine().trim();
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+        while (!fileName.toLowerCase().endsWith(".xls")) {
+            System.out.print("Ошибка: файл должен оканчиваться на .xls. Повторите ввод: ");
+            fileName = scanner.nextLine().trim();
+        }
 
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
+        String filePath = "C:/Users/User/Desktop/" + fileName;
+
+        String exportQuery =
+                "SELECT 'id', 'operation', 'operand1', 'result' " +
+                        "UNION ALL " +
+                        "SELECT id, operation, operand1, result " +
+                        "FROM " + TABLE_NAME + " " +
+                        "INTO OUTFILE '" + filePath + "' " +
+                        "CHARACTER SET cp1251";
+
+        try (Connection conn = connect();
+             PreparedStatement stmt = conn.prepareStatement(exportQuery)) {
+
+            stmt.executeQuery();
+            System.out.println("Данные успешно экспортированы в файл: " + filePath);
+
+        } catch (SQLException e) {
+            if (e.getMessage().contains("already exists")) {
+                System.out.println("Файл уже существует! Удалите его и попробуйте ещё раз.");
+            } else {
+                System.out.println("Ошибка при экспорте: " + e.getMessage());
             }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query = (columnNames != null && columnNames.length > 0)
-                ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
+    private static void selectAllFromTable() {
+        String query = "SELECT * FROM " + TABLE_NAME;
 
         try (Statement statement = connect().createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
@@ -193,11 +210,13 @@ public class TaskThree {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
 
+            // Вывод заголовков колонок
             for (int i = 1; i <= columnCount; i++) {
                 System.out.print(metaData.getColumnName(i) + "\t");
             }
             System.out.println();
 
+            // Вывод строк
             while (resultSet.next()) {
                 for (int i = 1; i <= columnCount; i++) {
                     System.out.print(resultSet.getString(i) + "\t");

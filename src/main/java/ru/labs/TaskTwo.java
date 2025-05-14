@@ -1,7 +1,5 @@
 package ru.labs;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -107,9 +105,8 @@ public class TaskTwo {
                 System.out.println("Сравнение: " + comparison);
             }
             case 7 -> {
-                getExcel(TABLE_NAME, TABLE_NAME);
-                System.out.println("Данные были сохранены в Excel.");
-                selectAllFromTable(TABLE_NAME, "id", "operation", "operand1", "operand2", "result");
+                getExcel();
+                selectAllFromTable();
             }
             case -1 -> System.out.println("Выход из программы.");
             default -> System.out.println("Неверный выбор. Повторите.");
@@ -171,47 +168,42 @@ public class TaskTwo {
         }
     }
 
-    private static void getExcel(String tableName, String fileName) {
-        String filePath = "src/main/resources/" + fileName + ".csv";
-        try (Statement statement = connect().createStatement();
-             FileWriter fileWriter = new FileWriter(filePath)) {
+    private static void getExcel() {
+        System.out.print("Введите имя файла с расширением (.xls): ");
+        String fileName = scanner.nextLine().trim();
 
-            String query = "SELECT * FROM " + tableName;
-            ResultSet resultSet = statement.executeQuery(query);
-            ResultSetMetaData metaData = resultSet.getMetaData();
-            int columnCount = metaData.getColumnCount();
+        while (!fileName.toLowerCase().endsWith(".xls")) {
+            System.out.print("Ошибка: файл должен оканчиваться на .xls. Повторите ввод: ");
+            fileName = scanner.nextLine().trim();
+        }
 
-            for (int i = 1; i <= columnCount; i++) {
-                fileWriter.append('"').append(metaData.getColumnName(i)).append('"');
-                if (i < columnCount) fileWriter.append(";");
+        String filePath = "C:/Users/User/Desktop/" + fileName;
+
+        String exportQuery =
+                "SELECT 'id', 'operation', 'operand1', 'operand2', 'result' " +
+                        "UNION ALL " +
+                        "SELECT id, operation, operand1, operand2, result " +
+                        "FROM " + TABLE_NAME + " " +
+                        "INTO OUTFILE '" + filePath + "' " +
+                        "CHARACTER SET cp1251";
+
+        try (Connection conn = connect();
+             PreparedStatement stmt = conn.prepareStatement(exportQuery)) {
+
+            stmt.executeQuery();
+            System.out.println("Данные успешно экспортированы в файл: " + filePath);
+
+        } catch (SQLException e) {
+            if (e.getMessage().contains("already exists")) {
+                System.out.println("Файл уже существует! Удалите его и попробуйте ещё раз.");
+            } else {
+                System.out.println("Ошибка при экспорте: " + e.getMessage());
             }
-            fileWriter.append("\n");
-
-            while (resultSet.next()) {
-                for (int i = 1; i <= columnCount; i++) {
-                    String value = resultSet.getString(i);
-                    fileWriter.append('"');
-                    if (value != null) {
-                        fileWriter.append(value.replace("\"", "\"\""));
-                    }
-                    fileWriter.append('"');
-                    if (i < columnCount) fileWriter.append(";");
-                }
-                fileWriter.append("\n");
-            }
-
-            System.out.println("Данные успешно экспортированы в файл CSV: " + filePath);
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.out.println("Ошибка при экспорте данных в CSV.");
         }
     }
 
-    private static void selectAllFromTable(String tableName, String... columnNames) {
-        String query = (columnNames != null && columnNames.length > 0)
-                ? "SELECT " + String.join(", ", columnNames) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
+    private static void selectAllFromTable() {
+        String query = "SELECT * FROM " + TABLE_NAME;
 
         try (Statement statement = connect().createStatement();
              ResultSet resultSet = statement.executeQuery(query)) {
@@ -219,11 +211,13 @@ public class TaskTwo {
             ResultSetMetaData metaData = resultSet.getMetaData();
             int columnCount = metaData.getColumnCount();
 
+            // Вывод заголовков колонок
             for (int i = 1; i <= columnCount; i++) {
                 System.out.print(metaData.getColumnName(i) + "\t");
             }
             System.out.println();
 
+            // Вывод строк
             while (resultSet.next()) {
                 for (int i = 1; i <= columnCount; i++) {
                     System.out.print(resultSet.getString(i) + "\t");

@@ -1,13 +1,11 @@
-package ru.labs.tasksix.menu;
-
-import ru.labs.tasksix.Parent;
+package ru.labs.tasksix;
 
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrintTables extends Parent {
-    public static void execute(Connection conn) {
+public class PrintTables extends TaskSix {
+    public static void execute() {
         List<String> tables = new ArrayList<>();
         try (Statement statement = conn.createStatement();
              ResultSet resultSet = statement.executeQuery("SHOW TABLES")) {

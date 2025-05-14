@@ -1,7 +1,5 @@
 package ru.labs.taskseven;
 
-import ru.labs.taskseven.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -11,14 +9,16 @@ public class TaskSeven {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "root";
-    private static final String TABLE_NAME = "table_seven";
+    protected static final String TABLE_NAME = "table_seven";
 
-    private static final Scanner scanner = new Scanner(System.in);
+    protected static final Scanner scanner = new Scanner(System.in);
     private static boolean tableExists = false;
-    private static Sort sort;
+    protected static Sort sort;
+    protected static Connection conn;
 
     public static void main(String[] args) {
-        try (Connection conn = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD)) {
+        try {
+            conn = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
             conn.createStatement().execute("DROP TABLE IF EXISTS " + TABLE_NAME);
             tableExists = false;
 
@@ -38,14 +38,14 @@ public class TaskSeven {
                 }
 
                 switch (choice) {
-                    case 1 -> PrintTables.execute(conn);
+                    case 1 -> PrintTables.execute();
                     case 2 -> {
-                        CreateTable.execute(conn, TABLE_NAME);
                         tableExists = true;
+                        CreateTable.execute();
                     }
-                    case 3 -> sort = InputArray.execute(conn, scanner, TABLE_NAME);
-                    case 4 -> SortArray.execute(conn, sort, TABLE_NAME);
-                    case 5 -> ExportToCsv.execute(conn, TABLE_NAME);
+                    case 3 -> sort = InputArray.execute();
+                    case 4 -> SortArray.execute();
+                    case 5 -> ExportToXls.execute();
                     case -1 -> System.out.println("Выход из программы.");
                     default -> System.out.println("Неверный выбор. Повторите.");
                 }

@@ -7,8 +7,25 @@ public final class Sort extends ArrayPI {
 
     public void inputArray() {
         System.out.println("Введите 35 целых чисел:");
+
         for (int i = 0; i < array.length; i++) {
-            array[i] = scanner.nextInt();
+            while (true) {
+                System.out.print("Элемент " + (i + 1) + ": ");
+                String input = scanner.nextLine();
+
+                //проверка на целое число
+                if (!input.matches("-?\\d+")) {
+                    System.out.println("Ошибка: введите целое число.");
+                    continue;
+                }
+
+                try {
+                    array[i] = Integer.parseInt(input);
+                    break;
+                } catch (NumberFormatException e) {
+                    System.out.println("Ошибка: число выходит за пределы допустимого диапазона int.");
+                }
+            }
         }
     }
 
@@ -27,11 +44,15 @@ public final class Sort extends ArrayPI {
     }
 
     public int[] sortDescending() {
-        int[] sorted = sortAscending();
-        for (int i = 0; i < sorted.length / 2; i++) {
-            int temp = sorted[i];
-            sorted[i] = sorted[sorted.length - 1 - i];
-            sorted[sorted.length - 1 - i] = temp;
+        int[] sorted = array.clone();
+        for (int i = 0; i < sorted.length - 1; i++) {
+            for (int j = 0; j < sorted.length - i - 1; j++) {
+                if (sorted[j] < sorted[j + 1]) {
+                    int temp = sorted[j];
+                    sorted[j] = sorted[j + 1];
+                    sorted[j + 1] = temp;
+                }
+            }
         }
         return sorted;
     }

@@ -2,9 +2,9 @@ package ru.labs.taskseven;
 
 import java.sql.*;
 
-public class SelectAllFromTable extends Parent {
-    public static void execute(Connection conn, String tableName) {
-        String sql = "SELECT * FROM " + tableName;
+public class SelectAllFromTable extends TaskSeven {
+    public static void execute() {
+        String sql = "SELECT * FROM " + TABLE_NAME;
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery(sql)) {
 

@@ -1,21 +1,17 @@
 package ru.labs.taskseven;
 
-import ru.labs.taskseven.Sort;
-
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.InputMismatchException;
-import java.util.Scanner;
 
-public class InputArray extends Parent {
-    public static Sort execute(Connection conn, Scanner scanner, String tableName) {
+public class InputArray extends TaskSeven {
+    public static Sort execute() {
         Sort sort = new Sort();
         try {
             sort.inputArray();
             sort.printArray(sort.array, "исходный массив");
 
-            insertArray(conn, sort.array, tableName, "original");
+            insertArray(sort.array, "original");
 
         } catch (InputMismatchException e) {
             System.out.println("Ошибка: введите только целые числа.");
@@ -24,8 +20,8 @@ public class InputArray extends Parent {
         return sort;
     }
 
-    private static void insertArray(Connection conn, int[] array, String tableName, String label) {
-        String sql = "INSERT INTO " + tableName + " (array_name, index_pos, value) VALUES (?, ?, ?)";
+    private static void insertArray(int[] array, String label) {
+        String sql = "INSERT INTO " + TABLE_NAME + " (array_name, index_pos, value) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < array.length; i++) {
                 stmt.setString(1, label);

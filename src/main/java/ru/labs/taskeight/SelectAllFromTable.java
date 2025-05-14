@@ -2,10 +2,10 @@ package ru.labs.taskeight;
 
 import java.sql.*;
 
-public class SelectAllFromTable extends Parent {
-    public static void execute(Connection conn, String tableName) {
+public class SelectAllFromTable extends TaskEight{
+    public static void execute() {
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName)) {
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + TABLE_NAME)) {
 
             ResultSetMetaData meta = rs.getMetaData();
             int colCount = meta.getColumnCount();

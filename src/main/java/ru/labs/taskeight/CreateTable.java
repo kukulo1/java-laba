@@ -4,9 +4,9 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-public class CreateTable extends Parent {
-    public static void execute(Connection conn, String tableName) {
-        String sql = "CREATE TABLE IF NOT EXISTS " + tableName + " (" +
+public class CreateTable extends TaskEight{
+    public static void execute() {
+        String sql = "CREATE TABLE IF NOT EXISTS " + TABLE_NAME + " (" +
                      "id INT AUTO_INCREMENT PRIMARY KEY, " +
                      "name VARCHAR(255), " +
                      "age INT, " +

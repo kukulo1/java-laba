@@ -1,7 +1,5 @@
 package ru.labs.tasksix;
 
-import ru.labs.tasksix.*;
-
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -11,14 +9,16 @@ public class TaskSix {
     private static final String CONNECTION_URL = "jdbc:mysql://localhost:3306/database?createDatabaseIfNotExist=true";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "root";
-    private static final Scanner scanner = new Scanner(System.in);
-    private static final String TABLE_NAME = "table_six";
+    protected static final Scanner scanner = new Scanner(System.in);
+    protected static final String TABLE_NAME = "table_six";
+    protected static Connection conn;
 
     private static boolean tableExists = false;
-    private static Matrix matrix;
+    protected static Matrix matrix;
 
     public static void main(String[] args) {
-        try (Connection conn = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD)) {
+        try {
+            conn = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
             conn.createStatement().execute("DROP TABLE IF EXISTS " + TABLE_NAME);
             tableExists = false;
 
@@ -38,14 +38,14 @@ public class TaskSix {
                 }
 
                 switch (choice) {
-                    case 1 -> ru.labs.tasksix.menu.PrintTables.execute(conn);
+                    case 1 -> ru.labs.tasksix.PrintTables.execute();
                     case 2 -> {
-                        ru.labs.tasksix.menu.CreateTable.execute(conn, TABLE_NAME);
+                        CreateTable.execute();
                         tableExists = true;
                     }
-                    case 3 -> matrix = InputMatrices.execute(scanner, conn, TABLE_NAME);
-                    case 4 -> MultiplyMatrices.execute(conn, TABLE_NAME, matrix);
-                    case 5 -> ExportToCsv.execute(conn, TABLE_NAME);
+                    case 3 -> matrix = InputMatrices.execute();
+                    case 4 -> MultiplyMatrices.execute();
+                    case 5 -> ExportToXls.execute();
                     case -1 -> System.out.println("Выход из программы.");
                     default -> System.out.println("Неверный выбор. Повторите.");
                 }

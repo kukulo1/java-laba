@@ -1,13 +1,11 @@
 package ru.labs.tasksix;
 
-import ru.labs.tasksix.Matrix;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-public class MultiplyMatrices extends Parent {
-    public static void execute(Connection conn, String tableName, Matrix matrix) {
+public class MultiplyMatrices extends TaskSix {
+    public static void execute() {
         if (matrix == null) {
             System.out.println("Ошибка: матрицы не были введены.");
             return;
@@ -16,7 +14,7 @@ public class MultiplyMatrices extends Parent {
         int[][] result = matrix.multiplyMatrices();
         matrix.printMatrix(result, "Результат (A x B)");
 
-        String sql = "INSERT INTO " + tableName + " (matrix_name, row_index, col_index, value) VALUES (?, ?, ?, ?)";
+        String sql = "INSERT INTO " + TABLE_NAME + " (matrix_name, row_index, col_index, value) VALUES (?, ?, ?, ?)";
         try (PreparedStatement stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < 7; i++) {
                 for (int j = 0; j < 7; j++) {

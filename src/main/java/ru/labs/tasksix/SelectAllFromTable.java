@@ -2,14 +2,11 @@ package ru.labs.tasksix;
 
 import java.sql.*;
 
-public class SelectAllFromTable extends Parent {
-    public static void execute(Connection conn, String tableName, String... columns) {
-        String query = (columns != null && columns.length > 0)
-                ? "SELECT " + String.join(", ", columns) + " FROM " + tableName
-                : "SELECT * FROM " + tableName;
-
+public class SelectAllFromTable extends TaskSix {
+    public static void execute() {
+        String sql = "SELECT * FROM " + TABLE_NAME;
         try (Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery(query)) {
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             ResultSetMetaData meta = rs.getMetaData();
             int cols = meta.getColumnCount();

@@ -4,8 +4,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrintTables extends Parent {
-    public static void execute(Connection conn) {
+public class PrintTables extends TaskEight{
+    public static void execute() {
         List<String> tables = new ArrayList<>();
         try (Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SHOW TABLES")) {
